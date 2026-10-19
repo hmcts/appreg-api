@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -17,7 +15,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 @Slf4j
@@ -52,18 +49,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
         ResolutionCode code = null;
         WordingTemplateSentence wordingTemplateCollection = null;
         if (resultCode != null) {
-            LocalDate todayUk = businessDateProvider.currentUkDate();
-            List<ResolutionCode> list =
-                    resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
-                            resultCode, todayUk);
-            if (list.isEmpty()) {
-                throw new AppRegistryException(
-                        ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
-                        "No valid resolution code could be found %s".formatted(resultCode));
-            }
-            code =
-                    ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                            list, "result code", resultCode, todayUk, ResolutionCode::getEndDate);
+            code = resolveResolutionCode(validatable);
             wordingTemplateCollection = WordingTemplateSentence.with(code.getWording());
             log.debug("Validated the result code {}", resultCode);
         } else {
@@ -83,6 +69,20 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
                             validatable));
         }
         return null;
+    }
+
+    protected ResolutionCode resolveResolutionCode(T validatable) {
+        var resultCode = getResultCode(validatable);
+        return resolutionCodeRepository
+                .findActiveResolutionCodesByCodeAndDate(
+                        resultCode, businessDateProvider.currentUkDate())
+                .orElseThrow(
+                        () ->
+                                new AppRegistryException(
+                                        ApplicationListEntryResultError
+                                                .RESOLUTION_CODE_DOES_NOT_EXIST,
+                                        "No valid resolution code could be found %s"
+                                                .formatted(resultCode)));
     }
 
     /**

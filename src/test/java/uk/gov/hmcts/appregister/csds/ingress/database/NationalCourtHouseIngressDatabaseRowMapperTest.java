@@ -20,6 +20,7 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
                 rowMapper.toRow(
                         new NationalCourtHouseIngressRecord(
                                 3106L,
+                                3802L,
                                 "Brentford Magistrates' Court",
                                 1L,
                                 LocalDate.of(1900, Month.JANUARY, 1),
@@ -29,6 +30,7 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
 
         assertThat(row)
                 .containsEntry("nch_id", 3106L)
+                .containsEntry("csds_id", 3802L)
                 .containsEntry("courthouse_name", "Brentford Magistrates' Court")
                 .containsEntry("court_type", "CHOA")
                 .containsEntry("changed_by", 0L)
@@ -46,6 +48,7 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
     void given_resultSet_when_mapRow_then_readsComparedFields() throws Exception {
         ResultSet rs = mock(ResultSet.class);
         when(rs.getLong("nch_id")).thenReturn(3106L);
+        when(rs.getLong("csds_id")).thenReturn(3802L);
         when(rs.getString("courthouse_name")).thenReturn("Brentford Magistrates' Court");
         when(rs.getLong("version_number")).thenReturn(1L);
         when(rs.getObject("start_date", LocalDate.class))
@@ -59,11 +62,20 @@ class NationalCourtHouseIngressDatabaseRowMapperTest {
                 .isEqualTo(
                         new NationalCourtHouseIngressRecord(
                                 3106L,
+                                3802L,
                                 "Brentford Magistrates' Court",
                                 1L,
                                 LocalDate.of(1900, Month.JANUARY, 1),
                                 LocalDate.of(2011, Month.DECEMBER, 9),
                                 "B01CF00",
                                 null));
+    }
+
+    @Test
+    void readsNullableCsdsId() throws Exception {
+        var rs = mock(ResultSet.class);
+        when(rs.wasNull()).thenReturn(true);
+        assertThat(rowMapper.mapRow(rs, 0).csdsId()).isNull();
+        assertThat(rowMapper.columns()).contains("csds_id");
     }
 }

@@ -16,6 +16,7 @@ public class FeeIngressDatabaseRowMapper
     private static final String TECHNICAL_USERNAME = "CSDS_INGRESS";
     private static final String OFFSITE_FEE_REFERENCE = "CO1.1";
     private static final String ID = "fee_id";
+    private static final String CSDS_ID = "csds_id";
     private static final String REFERENCE = "fee_reference";
     private static final String DESCRIPTION = "fee_description";
     private static final String VALUE = "fee_value";
@@ -29,6 +30,7 @@ public class FeeIngressDatabaseRowMapper
     private static final List<String> COLUMNS =
             List.of(
                     ID,
+                    CSDS_ID,
                     REFERENCE,
                     DESCRIPTION,
                     VALUE,
@@ -41,6 +43,7 @@ public class FeeIngressDatabaseRowMapper
                     IS_OFFSITE);
     private static final List<String> UPDATABLE_COLUMNS =
             List.of(
+                    CSDS_ID,
                     REFERENCE,
                     DESCRIPTION,
                     VALUE,
@@ -76,6 +79,7 @@ public class FeeIngressDatabaseRowMapper
     public Map<String, Object> toRow(FeeIngressRecord item) {
         var row = new LinkedHashMap<String, Object>();
         row.put(ID, item.id());
+        row.put(CSDS_ID, item.csdsId());
         row.put(REFERENCE, item.reference());
         row.put(DESCRIPTION, item.description());
         row.put(VALUE, item.amount());
@@ -85,14 +89,17 @@ public class FeeIngressDatabaseRowMapper
         row.put(CHANGED_BY, 0L);
         row.put(CHANGED_DATE, null); // ...updated upon handling.
         row.put(USER_NAME, TECHNICAL_USERNAME);
-        row.put(IS_OFFSITE, OFFSITE_FEE_REFERENCE.equals(item.reference()));
+        row.put(IS_OFFSITE, OFFSITE_FEE_REFERENCE.equalsIgnoreCase(item.reference()));
         return row;
     }
 
     @Override
     public FeeIngressRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        var csdsId = rs.getLong(CSDS_ID);
+        Long nullableCsdsId = rs.wasNull() ? null : csdsId;
         return new FeeIngressRecord(
                 rs.getLong(ID),
+                nullableCsdsId,
                 rs.getString(REFERENCE),
                 rs.getString(DESCRIPTION),
                 rs.getBigDecimal(VALUE),

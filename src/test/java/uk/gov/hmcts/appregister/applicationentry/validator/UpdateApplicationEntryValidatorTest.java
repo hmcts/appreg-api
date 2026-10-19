@@ -1,7 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
@@ -36,6 +40,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -74,6 +79,7 @@ class UpdateApplicationEntryValidatorTest {
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    @Mock private AppListEntryFeeRepository appListEntryFeeRepository;
 
     @InjectMocks private UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -122,7 +128,7 @@ class UpdateApplicationEntryValidatorTest {
                 .thenReturn(Optional.of(applicationList));
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
         when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(fee, null));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
@@ -140,6 +146,56 @@ class UpdateApplicationEntryValidatorTest {
                 .thenReturn(List.of());
     }
 
+    @Test
+    void unchangedApplicationCodeRetainsExpiredMainAndOffsiteFees() {
+        var code = new ApplicationCodeTestData().someMinimal().build();
+        applicationListEntry.setApplicationCode(code);
+        code.setFeeDue(YesOrNo.YES);
+        entryUpdateDto.setApplicationCode(code.getCode().toLowerCase());
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        payload = payload.withApplicationListEntry(applicationListEntry);
+        var main = new FeeTestData().someMinimal().build();
+        main.setEndDate(LocalDate.of(2000, 1, 1));
+        var offsite = new FeeTestData().someMinimal().isOffsite(true).build();
+        offsite.setEndDate(LocalDate.of(2000, 1, 1));
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(main, offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, offsite));
+        Mockito.verifyNoInteractions(feeService);
+    }
+
+    @Test
+    void unchangedApplicationCodeResolvesOnlyMissingFeeSelections() {
+        var code = new ApplicationCodeTestData().someMinimal().build();
+        applicationListEntry.setApplicationCode(code);
+        code.setFeeDue(YesOrNo.YES);
+        entryUpdateDto.setApplicationCode(code.getCode());
+        entryUpdateDto.setHasOffsiteFee(true);
+        var payload = new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+        payload = payload.withApplicationListEntry(applicationListEntry);
+        var main = new FeeTestData().someMinimal().build();
+        var newMain = new FeeTestData().someMinimal().build();
+        var offsite = new FeeTestData().someMinimal().isOffsite(true).build();
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(main));
+        when(feeService.resolveFeePair(
+                        code.getFeeReference(), applicationListEntry.getLodgementDate()))
+                .thenReturn(new FeePair(newMain, offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, offsite));
+        entryUpdateDto.setHasOffsiteFee(false);
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(main, null));
+        when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
+                .thenReturn(List.of(offsite));
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(newMain, offsite));
+        entryUpdateDto.setApplicationCode("CHANGED");
+        assertThat(updateApplicationEntryValidator.resolveFee(code, payload))
+                .isEqualTo(new FeePair(newMain, offsite));
+    }
+
     private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {
         if (feeStatuses == null) {
             return;
@@ -148,6 +204,38 @@ class UpdateApplicationEntryValidatorTest {
         feeStatuses.stream()
                 .filter(feeStatus -> feeStatus != null && feeStatus.getStatusDate() != null)
                 .forEach(feeStatus -> feeStatus.setStatusDate(TODAY_UK));
+    }
+
+    @Test
+    void unchangedStandardApplicantRetainsStoredHistoricalVersion() {
+        var historical = new StandardApplicantTestData().someComplete();
+        historical.setApplicantCode("HIST");
+        historical.setApplicantEndDate(TODAY_UK.minusDays(1));
+        applicationListEntry.setStandardApplicant(historical);
+        entryUpdateDto.setStandardApplicantCode("hist");
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        assertThat(updateApplicationEntryValidator.validateStandardApplicantCode(payload))
+                .isSameAs(historical);
+        verify(standardApplicantRepository, never())
+                .findStandardApplicantByCodeAndDate(any(), any());
+    }
+
+    @Test
+    void changedStandardApplicantUsesCurrentDateSelection() {
+        var historical = new StandardApplicantTestData().someComplete();
+        historical.setApplicantCode("OLD");
+        applicationListEntry.setStandardApplicant(historical);
+        entryUpdateDto.setStandardApplicantCode("NEW");
+        var replacement = new StandardApplicantTestData().someComplete();
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate("NEW", TODAY_UK))
+                .thenReturn(List.of(replacement));
+        var payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
+                        .withApplicationListEntry(applicationListEntry);
+        assertThat(updateApplicationEntryValidator.validateStandardApplicantCode(payload))
+                .isSameAs(replacement);
     }
 
     @Test
@@ -211,7 +299,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
 
@@ -232,7 +320,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
 
@@ -659,7 +747,7 @@ class UpdateApplicationEntryValidatorTest {
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid)
                         .withApplicationListEntry(applicationListEntry);
         when(applicationCodeRepository.findByCodeAndDate("EXPIRED", TODAY_UK))
-                .thenReturn(List.of());
+                .thenReturn(Optional.empty());
         var exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
@@ -679,7 +767,7 @@ class UpdateApplicationEntryValidatorTest {
                         .withApplicationListEntry(applicationListEntry);
         when(applicationCodeRepository.findByCodeAndDate(
                         entryUpdateDto.getApplicationCode(), TODAY_UK))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
         Assertions.assertSame(
                 applicationCode, updateApplicationEntryValidator.validateApplicationCode(payload));
     }
@@ -692,7 +780,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of());
+                .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -708,18 +796,15 @@ class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantCodeMultiple_prefersFirstRecord() {
+    void testApplicationCodeUsesRepositorySelectedRecord() {
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.getApplicant().setPerson(null);
         sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
 
-        ApplicationCode alternativeApplicationCode = new ApplicationCodeTestData().someComplete();
-        alternativeApplicationCode.setEndDate(TODAY_UK.plusDays(1));
-
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode, alternativeApplicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -800,7 +885,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -834,7 +919,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -858,7 +943,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -883,7 +968,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -954,7 +1039,7 @@ class UpdateApplicationEntryValidatorTest {
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(applicationCode));
+                .thenReturn(Optional.of(applicationCode));
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);

@@ -19,71 +19,59 @@ import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProje
 public interface StandardApplicantRepository extends JpaRepository<StandardApplicant, Long> {
 
     /**
-     * Finds a StandardApplicant by its applicant code.
+     * Finds the highest-ID date-valid version for an applicant code.
      *
      * @param code the applicant code to search for
      * @param date The date to check for active status
-     * @return matching active rows in deterministic selection order
+     * @return at most one matching StandardApplicant
      */
     @Query(
             """
         SELECT sa
         FROM StandardApplicant sa
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
-        AND sa.applicantStartDate <= :date
-        AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
-        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
-                 sa.applicantEndDate DESC,
-                 sa.applicantStartDate DESC,
-                 sa.id DESC
+        AND sa.id = (
+            SELECT MAX(v.id) FROM StandardApplicant v
+            WHERE LOWER(v.applicantCode) = LOWER(sa.applicantCode)
+              AND v.applicantStartDate <= :date
+              AND (v.applicantEndDate IS NULL OR v.applicantEndDate >= :date)
+        )
         """)
     List<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
-    /** Returns all standard-applicant rows active on the supplied date in selection order. */
+    /** Returns the highest-ID date-valid version per applicant code. */
     @Query(
             """
             SELECT sa
             FROM StandardApplicant sa
-            WHERE sa.applicantStartDate <= :date
-              AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
-            ORDER BY LOWER(sa.applicantCode),
-                     CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
-                     sa.applicantEndDate DESC,
-                     sa.applicantStartDate DESC,
-                     sa.id DESC
+            WHERE sa.id = (
+                SELECT MAX(v.id) FROM StandardApplicant v
+                WHERE LOWER(v.applicantCode) = LOWER(sa.applicantCode)
+                  AND v.applicantStartDate <= :date
+                  AND (v.applicantEndDate IS NULL OR v.applicantEndDate >= :date)
+            )
+            ORDER BY LOWER(sa.applicantCode)
             """)
     List<StandardApplicant> findAllByDate(@Param("date") LocalDate date);
 
     /**
-     * Finds StandardApplicant rows by applicant code without filtering by lodgement date.
-     *
-     * <p>The supplied active date is only used to prefer the currently active row when duplicate
-     * codes exist. Historic rows remain eligible so saved ALE detail rendering is not blocked by
-     * date-effective lookup failures.
+     * Finds the highest-ID version by applicant code, without date filtering.
      *
      * @param code the applicant code to search for
-     * @param active the date used to prefer currently active rows
-     * @return ordered matching StandardApplicant rows
+     * @return at most one matching StandardApplicant
      */
     @Query(
             """
         SELECT sa
         FROM StandardApplicant sa
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
-        ORDER BY CASE
-                    WHEN sa.applicantStartDate <= :active
-                     AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :active)
-                    THEN 0
-                    ELSE 1
-                 END,
-                 CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
-                 sa.applicantEndDate DESC,
-                 sa.applicantStartDate DESC,
-                 sa.id DESC
+        AND sa.id = (
+            SELECT MAX(v.id) FROM StandardApplicant v
+            WHERE LOWER(v.applicantCode) = LOWER(sa.applicantCode)
+        )
         """)
-    List<StandardApplicant> findStandardApplicantByCode(
-            @Param("code") String code, @Param("active") LocalDate active);
+    List<StandardApplicant> findStandardApplicantByCode(@Param("code") String code);
 
     /**
      * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).
@@ -109,29 +97,33 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
                 c.name AS effectiveName
         FROM StandardApplicant c
         WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
-          AND (
+          AND c.id = (
+            SELECT MAX(v.id) FROM StandardApplicant v
+            WHERE LOWER(v.applicantCode) = LOWER(c.applicantCode)
+            AND (
               (
                   CAST(:from AS date) IS NULL
                   AND CAST(:to AS date) IS NULL
-                  AND c.applicantStartDate <= :active
-                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :active)
+                  AND v.applicantStartDate <= :active
+                  AND (v.applicantEndDate IS NULL OR v.applicantEndDate >= :active)
               )
               OR (
                   CAST(:from AS date) IS NOT NULL
                   AND CAST(:to AS date) IS NOT NULL
-                  AND c.applicantStartDate <= :to
-                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :from)
+                  AND v.applicantStartDate <= :to
+                  AND (v.applicantEndDate IS NULL OR v.applicantEndDate >= :from)
               )
               OR (
                   CAST(:from AS date) IS NOT NULL
                   AND CAST(:to AS date) IS NULL
-                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :from)
+                  AND (v.applicantEndDate IS NULL OR v.applicantEndDate >= :from)
               )
               OR (
                   CAST(:from AS date) IS NULL
                   AND CAST(:to AS date) IS NOT NULL
-                  AND c.applicantStartDate <= :to
+                  AND v.applicantStartDate <= :to
               )
+            )
           )
           AND (
               :addressLine1 IS NULL

@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
             "appreg.csds.ingress.processors.application-codes.backup-source=",
             "appreg.csds.ingress.processors.application-codes.backup-target=",
             "appreg.csds.ingress.processors.application-codes.ingress-target=application_codes",
-            "appreg.csds.ingress.processors.application-codes.primary-keys[0]=application_code",
+            "appreg.csds.ingress.processors.application-codes.primary-key=ac_id",
             "appreg.csds.ingress.base-url=${wiremock.server.baseUrl}",
             "appreg.csds.ingress.access-keys[0]=primary-test-key",
             "appreg.csds.ingress.access-keys[1]=secondary-test-key"
@@ -93,6 +93,44 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
     }
 
     @Test
+    void given_legacyAndModifiedVersions_when_ingestAndReplay_then_preserveHistory() {
+        var legacy = applicationCodeRepository.findAll().getFirst();
+        var remoteId = 1500000000L;
+        var original = toSourceRecordWithPssacid(legacy, remoteId);
+        var modified = toSourceRecordWithPssacid(legacy, remoteId + 1);
+        modified.put("ApplicationTitle", "New historical version");
+        modified.put("EndDate", "2020-02-01");
+
+        var first = applicationCodeDataIngressProcessor.ingest(List.of(page(original)));
+        assertThat(first.getUpdated()).isEqualTo(1);
+        assertThat(first.getInserted()).isZero();
+        var response = applicationCodeDataIngressProcessor.ingest(List.of(page(modified)));
+        assertThat(response.getUpdated()).isZero();
+        assertThat(response.getInserted()).isEqualTo(1);
+        var parameters =
+                new MapSqlParameterSource()
+                        .addValue("legacyId", legacy.getId())
+                        .addValue("newId", remoteId + 100001);
+        var sql =
+                "SELECT * FROM %s.application_codes WHERE ac_id IN (:legacyId, :newId) ORDER BY ac_id"
+                        .formatted(schema);
+        var saved = jdbcTemplate.queryForList(sql, parameters);
+        assertThat(saved).hasSize(2);
+        assertThat(((Number) saved.getFirst().get("csds_id")).longValue()).isEqualTo(remoteId);
+        assertThat(((Number) saved.getLast().get("csds_id")).longValue()).isEqualTo(remoteId + 1);
+        assertThat(saved.getLast())
+                .containsEntry("application_code_title", "New historical version");
+
+        for (var record : List.of(original, modified)) {
+            var replay = applicationCodeDataIngressProcessor.ingest(List.of(page(record)));
+            assertThat(replay.getInserted()).isZero();
+            assertThat(replay.getUpdated()).isZero();
+        }
+        // Includes changed_date: a replay must perform no updates, including audit metadata.
+        assertThat(jdbcTemplate.queryForList(sql, parameters)).isEqualTo(saved);
+    }
+
+    @Test
     void given_applicationCodeProcessorEnabled_when_runIngress_then_logsDiffSummary()
             throws JsonProcessingException {
         var existingApplicationCodes =
@@ -132,7 +170,9 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
 
             stubFor(
                     get(urlEqualTo(
-                                    "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
+                                    "/query/APPREGISTER/ApplicationCode/GD?%24limit="
+                                            + (totalCount - offset)
+                                            + "&%24offset="
                                             + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key"))
                             .willReturn(
@@ -170,7 +210,9 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
             verify(
                     getRequestedFor(
                                     urlEqualTo(
-                                            "/query/APPREGISTER/ApplicationCode/GD?%24limit=2&%24offset="
+                                            "/query/APPREGISTER/ApplicationCode/GD?%24limit="
+                                                    + (totalCount - offset)
+                                                    + "&%24offset="
                                                     + offset))
                             .withHeader("Api-Key", equalTo("primary-test-key")));
         }
@@ -227,6 +269,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
                         + 2000;
         var validInsertedRecord = createInsertedRecord(insertedId);
         var failingInsertedRecord = createInsertedRecord(insertedId + 1);
+        failingInsertedRecord.put("Code", "AA99998");
         failingInsertedRecord.put("ApplicationTitle", "X".repeat(501));
 
         assertThatThrownBy(
@@ -257,110 +300,6 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         assertThat((String) audits.getFirst().get("error")).containsIgnoringCase("value too long");
         assertThat(applicationCodeRepository.findById(insertedId + 100000L)).isEmpty();
         assertThat(applicationCodeRepository.findById(insertedId + 100001L)).isEmpty();
-    }
-
-    @Test
-    void given_existingCode_when_sourceIdsChange_then_preserveAcIdAndEntryLinks() {
-        var linkedId =
-                jdbcTemplate.queryForObject(
-                        "SELECT ac_ac_id FROM %s.application_list_entries ORDER BY ale_id LIMIT 1"
-                                .formatted(schema),
-                        new MapSqlParameterSource(),
-                        Long.class);
-        var existing = applicationCodeRepository.findById(linkedId).orElseThrow();
-        final var linkedCount =
-                jdbcTemplate.queryForObject(
-                        "SELECT count(*) FROM %s.application_list_entries WHERE ac_ac_id = :id"
-                                .formatted(schema),
-                        new MapSqlParameterSource("id", linkedId),
-                        Long.class);
-        var source = toSourceRecordWithPssacid(existing, 999999L);
-        source.put("PSSApplicationCodeID", 888888L);
-        source.put("ApplicationTitle", "Updated by code");
-
-        var response = applicationCodeDataIngressProcessor.ingest(List.of(page(source)));
-
-        assertThat(response.getUpdated()).isEqualTo(1);
-        assertThat(response.getInserted()).isZero();
-        assertThat(applicationCodeRepository.findById(linkedId).orElseThrow().getTitle())
-                .isEqualTo("Updated by code");
-        source.remove(List.of("ApplicationCodeID", "PSSApplicationCodeID"));
-        source.put("ApplicationTitle", "Updated without source IDs");
-        assertThat(applicationCodeDataIngressProcessor.ingest(List.of(page(source))).getUpdated())
-                .isEqualTo(1);
-        assertThat(applicationCodeRepository.findById(linkedId).orElseThrow().getTitle())
-                .isEqualTo("Updated without source IDs");
-        assertThat(
-                        jdbcTemplate.queryForObject(
-                                "SELECT count(*) FROM %s.application_list_entries WHERE ac_ac_id = :id"
-                                        .formatted(schema),
-                                new MapSqlParameterSource("id", linkedId),
-                                Long.class))
-                .isEqualTo(linkedCount);
-    }
-
-    @Test
-    void given_newCode_when_ingestedAgainWithDifferentSourceId_then_updateOriginalAcId() {
-        var sourceId =
-                applicationCodeRepository.findAll().stream()
-                                .map(ApplicationCode::getId)
-                                .max(Long::compareTo)
-                                .orElseThrow()
-                        + 3000;
-        var source = createInsertedRecord(sourceId);
-        assertThat(applicationCodeDataIngressProcessor.ingest(List.of(page(source))).getInserted())
-                .isEqualTo(1);
-
-        source.put("ApplicationCodeID", sourceId + 500000);
-        source.put("ApplicationTitle", "Repeat ingress");
-        var response = applicationCodeDataIngressProcessor.ingest(List.of(page(source)));
-
-        assertThat(response.getUpdated()).isEqualTo(1);
-        assertThat(response.getInserted()).isZero();
-        assertThat(applicationCodeRepository.findById(sourceId + 100000).orElseThrow().getTitle())
-                .isEqualTo("Repeat ingress");
-        assertThat(applicationCodeRepository.findById(sourceId + 600000)).isEmpty();
-    }
-
-    @Test
-    void given_duplicateCodeAcrossPages_when_ingest_then_rejectBeforeWrites() {
-        var sourceId =
-                applicationCodeRepository.findAll().stream()
-                                .map(ApplicationCode::getId)
-                                .max(Long::compareTo)
-                                .orElseThrow()
-                        + 4000;
-        var first = createInsertedRecord(sourceId);
-        var second = createInsertedRecord(sourceId + 1);
-        second.put("Code", first.get("Code").textValue());
-        var count = applicationCodeRepository.count();
-
-        assertThatThrownBy(
-                        () ->
-                                applicationCodeDataIngressProcessor.ingest(
-                                        List.of(page(first), page(second))))
-                .hasMessageContaining("Duplicate incoming application_code");
-
-        assertThat(applicationCodeRepository.count()).isEqualTo(count);
-        assertThat(applicationCodeRepository.findById(sourceId + 100000)).isEmpty();
-    }
-
-    @Test
-    void given_calculatedAcIdCollision_when_ingest_then_rejectBeforeWrites() {
-        var existing =
-                applicationCodeRepository.findAll().stream()
-                        .max(Comparator.comparing(ApplicationCode::getId))
-                        .orElseThrow();
-        var source = createInsertedRecord(existing.getId() - 100000);
-        source.put("Code", "ZZ99997");
-        var count = applicationCodeRepository.count();
-
-        assertThatThrownBy(() -> applicationCodeDataIngressProcessor.ingest(List.of(page(source))))
-                .hasMessageContaining("Legacy AC_ID " + existing.getId());
-
-        assertThat(applicationCodeRepository.count()).isEqualTo(count);
-        assertThat(applicationCodeRepository.findById(existing.getId()).orElseThrow().getCode())
-                .isEqualTo(existing.getCode());
     }
 
     private ObjectNode toSourceRecordWithPssacid(
@@ -406,7 +345,7 @@ class ApplicationCodeDataIngressProcessorIntegrationTest extends BaseRepositoryT
         return OBJECT_MAPPER
                 .createObjectNode()
                 .put("ApplicationCodeID", insertedId)
-                .put("Code", "AA" + insertedId)
+                .put("Code", "AA99999")
                 .put("ApplicationTitle", "Inserted Title")
                 .put("ApplicationWording", "Inserted Wording")
                 .putNull("Legislation")

@@ -14,7 +14,6 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLock;
 import uk.gov.hmcts.appregister.common.lock.DistributedJobLockService;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsIngestError;
 import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsPayloadValidationException;
 import uk.gov.hmcts.appregister.csds.ingress.processor.IDataIngressProcessor;
@@ -73,14 +72,8 @@ public class CsdsIngressProcessor {
                                                                 CsdsPayloadValidationException)
                                 ? CsdsIngestError.INVALID_UPSTREAM_DATA
                                 : CommonAppError.INTERNAL_SERVER_ERROR;
-                var detail = "Failed processors: " + failedProcessorNames(failedProcessors);
-                if (failedProcessors.stream()
-                        .allMatch(
-                                failure ->
-                                        failure.cause() instanceof CsdsDuplicateRecordException)) {
-                    throw new CsdsDuplicateRecordException(detail);
-                }
-                throw new AppRegistryException(error, detail);
+                throw new AppRegistryException(
+                        error, "Failed processors: " + failedProcessorNames(failedProcessors));
             }
         } finally {
             if (!distributedJobLockService.release(lock)) {
@@ -148,14 +141,12 @@ public class CsdsIngressProcessor {
                         processor.targetTable(),
                         processor.targetKeyField(),
                         summarizeFailure(ex));
-                if (!(ex instanceof CsdsDuplicateRecordException)) {
-                    log.debug(
-                            "CSDS ingress processor {} failed for target {}.{}",
-                            processor.datasetName(),
-                            processor.targetTable(),
-                            processor.targetKeyField(),
-                            ex);
-                }
+                log.debug(
+                        "CSDS ingress processor {} failed for target {}.{}",
+                        processor.datasetName(),
+                        processor.targetTable(),
+                        processor.targetKeyField(),
+                        ex);
                 failedProcessors.add(new ProcessorFailure(processor.datasetName(), ex));
             }
             if (index < processors.size() - 1) {

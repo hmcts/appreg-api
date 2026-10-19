@@ -26,7 +26,6 @@ public class CsdsIngressProperties {
 
     private Duration readTimeout = Duration.ofSeconds(30L);
 
-    // Retained for configuration compatibility; retrieval now uses the reported dataset count.
     private int pageSize = 100;
 
     private StartupRunner startupRunner = new StartupRunner();
@@ -144,51 +143,26 @@ public class CsdsIngressProperties {
 
         private String backupTarget;
 
-        private List<String> primaryKeys;
-
-        // Ordered CSDS field mappings, not additional identity columns. Fees use reference, date.
-        private List<String> businessKeys;
-
-        private final int businessKeyCount;
-
-        private String csdsKey;
-
-        private String legacyKey;
+        private String primaryKey;
 
         private String reportingDir;
 
+        protected ProcessorProperties() {
+            // Default constructor for configuration binding.
+        }
+
         protected ProcessorProperties(
-                String sourceEntityName,
-                String ingressTarget,
-                List<String> primaryKeys,
-                List<String> businessKeys,
-                String csdsKey,
-                String legacyKey) {
+                String sourceEntityName, String ingressTarget, String primaryKey) {
             this.sourceEntityName = sourceEntityName;
             this.ingressTarget = ingressTarget;
-            this.primaryKeys = primaryKeys;
-            this.businessKeys = businessKeys;
-            this.businessKeyCount = businessKeys.size();
-            this.csdsKey = csdsKey;
-            this.legacyKey = legacyKey;
+            this.primaryKey = primaryKey;
         }
 
         protected boolean isConfigurationValid() {
             return !enabled
                     || (StringUtils.hasText(sourceEntityName)
                             && StringUtils.hasText(ingressTarget)
-                            && StringUtils.hasText(csdsKey)
-                            && StringUtils.hasText(legacyKey)
-                            && validKeyFields(primaryKeys)
-                            && validKeyFields(businessKeys)
-                            && businessKeys.size() == businessKeyCount);
-        }
-
-        private boolean validKeyFields(List<String> fields) {
-            return fields != null
-                    && !fields.isEmpty()
-                    && fields.stream().allMatch(StringUtils::hasText)
-                    && fields.stream().distinct().count() == fields.size();
+                            && StringUtils.hasText(primaryKey));
         }
 
         protected boolean requiresRemoteAccess() {
@@ -200,13 +174,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class ApplicationCodes extends ProcessorProperties {
         public ApplicationCodes() {
-            super(
-                    "ApplicationCode",
-                    "application_codes_staging",
-                    List.of("application_code"),
-                    List.of("Code"),
-                    "ApplicationCodeID",
-                    "PSSApplicationCodeID");
+            super("ApplicationCode", "application_codes_staging", "ac_id");
         }
     }
 
@@ -214,13 +182,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class ResolutionCodes extends ProcessorProperties {
         public ResolutionCodes() {
-            super(
-                    "ResolutionCode",
-                    "resolution_codes_staging",
-                    List.of("resolution_code"),
-                    List.of("Code"),
-                    "ResolutionCodeID",
-                    "PSSResolutionCodeID");
+            super("ResolutionCode", "resolution_codes_staging", "rc_id");
         }
     }
 
@@ -228,13 +190,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class Fee extends ProcessorProperties {
         public Fee() {
-            super(
-                    "CivilFee",
-                    "fee_staging",
-                    List.of("fee_reference", "fee_start_date"),
-                    List.of("FeeReference", "StartDate"),
-                    "CivilFeeID",
-                    "PSSFixedListID");
+            super("CivilFee", "fee_staging", "fee_id");
         }
     }
 
@@ -242,13 +198,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class NationalCourtHouses extends ProcessorProperties {
         public NationalCourtHouses() {
-            super(
-                    "Court",
-                    "national_court_houses_staging",
-                    List.of("court_location_code"),
-                    List.of("CourtLocationCode"),
-                    "CourtID",
-                    "PSSNationalCourthouseID");
+            super("Court", "national_court_houses_staging", "nch_id");
         }
     }
 
@@ -256,13 +206,7 @@ public class CsdsIngressProperties {
     @Setter
     public static class StandardApplicants extends ProcessorProperties {
         public StandardApplicants() {
-            super(
-                    "GetStandardApplicant",
-                    "standard_applicants_staging",
-                    List.of("standard_applicant_code"),
-                    List.of("Code"),
-                    "ApplicantID",
-                    "PSSApplicantID");
+            super("DA_GetStandardApplicant", "standard_applicants_staging", "sa_id");
         }
     }
 }

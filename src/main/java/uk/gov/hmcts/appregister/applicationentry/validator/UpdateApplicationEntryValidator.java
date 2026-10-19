@@ -15,8 +15,10 @@ import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -43,6 +45,7 @@ public class UpdateApplicationEntryValidator
                 PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess> {
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    private final AppListEntryFeeRepository appListEntryFeeRepository;
 
     public UpdateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
@@ -51,7 +54,8 @@ public class UpdateApplicationEntryValidator
             BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
-            AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
+            AppListEntryFeeStatusRepository appListEntryFeeStatusRepository,
+            AppListEntryFeeRepository appListEntryFeeRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
@@ -60,6 +64,33 @@ public class UpdateApplicationEntryValidator
                 standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
         this.appListEntryFeeStatusRepository = appListEntryFeeStatusRepository;
+        this.appListEntryFeeRepository = appListEntryFeeRepository;
+    }
+
+    @Override
+    protected FeePair resolveFee(ApplicationCode applicationCode, PayloadForUpdateEntry payload) {
+        var entry = payload.getApplicationListEntry();
+        if (applicationCode.getFeeDue() != YesOrNo.YES
+                || entry.getApplicationCode() == null
+                || !entry.getApplicationCode()
+                        .getCode()
+                        .equalsIgnoreCase(getApplicationCode(payload))) {
+            return super.resolveFee(applicationCode, payload);
+        }
+        // Existing fee mappings are historical references, not candidates for date-based
+        // reselection.
+        var stored = appListEntryFeeRepository.getFeeForEntryId(entry.getId());
+        if (stored.isEmpty()) {
+            return super.resolveFee(applicationCode, payload);
+        }
+        var main = stored.stream().filter(fee -> !fee.isOffsite()).findFirst();
+        var offsite = stored.stream().filter(Fee::isOffsite).findFirst();
+        if (main.isPresent()
+                && (offsite.isPresent() || !Boolean.TRUE.equals(getHasOffsiteFee(payload)))) {
+            return new FeePair(main.get(), offsite.orElse(null));
+        }
+        var selected = super.resolveFee(applicationCode, payload);
+        return new FeePair(main.orElse(selected.mainFee()), offsite.orElse(selected.offsiteFee()));
     }
 
     @Override

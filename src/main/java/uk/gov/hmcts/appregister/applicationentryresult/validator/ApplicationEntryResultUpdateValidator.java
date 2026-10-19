@@ -50,6 +50,17 @@ public class ApplicationEntryResultUpdateValidator
     }
 
     @Override
+    protected ResolutionCode resolveResolutionCode(PayloadForUpdateEntryResult validatable) {
+        // Retain the stored version, even after expiry; only replacement codes use today's lookup.
+        return appListEntryResultRepository
+                .findByUuidAndApplicationList_Uuid(
+                        validatable.getResultId(), validatable.getEntryId())
+                .map(AppListEntryResolution::getResolutionCode)
+                .filter(code -> code.getResultCode().equalsIgnoreCase(getResultCode(validatable)))
+                .orElseGet(() -> super.resolveResolutionCode(validatable));
+    }
+
+    @Override
     protected ListEntryResultUpdateValidationSuccess getResult(
             ResolutionCode code,
             WordingTemplateSentence wordingTemplateCollection,

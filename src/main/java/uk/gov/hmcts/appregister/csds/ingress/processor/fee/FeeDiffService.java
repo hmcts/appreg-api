@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,26 +17,24 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadServic
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH =
-            "no existing fee business-key match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing fee business-key match";
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "new CSDS fee version";
+    private static final String UPDATE_REASON_EXISTING_MATCH = "enrich legacy fee with CSDS ID";
 
     private final JdbcIngressTableReadService tableReadService;
     private final FeeIngressDatabaseRowMapper rowMapper;
 
     @Override
     public FeeDiffResult diff(FeeDiffRequest request) {
-        val incomingByKey = new LinkedHashMap<FeeIngressRecord.BusinessKey, FeeIngressRecord>();
+        val incomingById = new LinkedHashMap<Long, FeeIngressRecord>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingByKey, item));
+                .forEach(item -> addIncomingRecord(request.targetTable(), incomingById, item));
 
         log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
@@ -49,36 +49,45 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
         val diffRecords =
                 new ArrayList<
                         IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>>();
-        val existingByKey =
+        val keys = new HashSet<FeeIngressRecord.BusinessKey>();
+        val knownVersions =
                 existingById.values().stream()
-                        .collect(Collectors.toMap(FeeIngressRecord::businessKey, item -> item));
-        val incomingById = new LinkedHashMap<Long, FeeIngressRecord>();
-        for (val incoming : incomingByKey.values()) {
-            val existing = existingByKey.get(incoming.businessKey());
-            val intendedId =
-                    existing == null
-                            ? FeeIngressRecord.calculateId(incoming.pssId(), incoming.id())
-                            : existing.id();
-            if (intendedId == null) {
+                        .filter(item -> item.csdsId() != null)
+                        .map(item -> Map.entry(item.csdsId(), item.businessKey()))
+                        .collect(Collectors.toSet());
+        val plannedIds = new HashSet<Long>();
+        for (val incoming : incomingById.values()) {
+            if (!keys.add(incoming.businessKey())) {
                 throw new AppRegistryException(
                         CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Missing source ID for new fee " + incoming.businessKey());
+                        "Duplicate incoming fee business key " + incoming.businessKey());
             }
-            val intended = incoming.withId(intendedId);
-            val idOwner = existingById.get(intendedId);
-            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if ((idOwner != null && !idOwner.businessKey().equals(incoming.businessKey()))
-                    || incomingOwner != null) {
-                val message =
-                        "Legacy FEE_ID %s conflicts for incoming fee [%s] with owner [%s]"
-                                .formatted(
-                                        intendedId,
-                                        describe(intended),
-                                        describe(incomingOwner != null ? incomingOwner : idOwner));
-                log.error(message);
-                throw new CsdsDuplicateRecordException(message);
+            if (knownVersions.contains(Map.entry(incoming.csdsId(), incoming.businessKey()))) {
+                continue;
             }
-            diffRecords.add(determineDiffRecord(existing, intended));
+            // Earlier imports also allocated offset IDs without recording the CSDS identity.
+            val legacy =
+                    existingById.get(
+                            incoming.id() != null
+                                    ? incoming.id()
+                                    : FeeIngressRecord.calculateId(null, incoming.csdsId()));
+            val enrich =
+                    legacy != null
+                            && legacy.csdsId() == null
+                            && legacy.businessKey().equals(incoming.businessKey());
+            val intended =
+                    incoming.withId(
+                            enrich
+                                    ? legacy.id()
+                                    : FeeIngressRecord.calculateId(null, incoming.csdsId()));
+            if ((!enrich && existingById.containsKey(intended.id()))
+                    || !plannedIds.add(intended.id())) {
+                throw new AppRegistryException(
+                        CommonAppError.INTERNAL_SERVER_ERROR,
+                        "FEE_ID %s conflicts for incoming fee %s"
+                                .formatted(intended.id(), incoming.businessKey()));
+            }
+            diffRecords.add(determineDiffRecord(enrich ? legacy : null, incoming, intended));
         }
 
         return new FeeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
@@ -86,33 +95,35 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<FeeIngressRecord.BusinessKey, FeeIngressRecord> incomingByKey,
+            LinkedHashMap<Long, FeeIngressRecord> incomingById,
             FeeIngressRecord item) {
-        val existing = incomingByKey.putIfAbsent(item.businessKey(), item);
+        val existing = incomingById.putIfAbsent(item.csdsId(), item);
         if (existing == null) {
             return;
         }
 
-        val message =
-                ("Duplicate incoming fee business key %s detected for %s. Existing record [%s], "
-                                + "duplicate record [%s]")
-                        .formatted(
-                                item.businessKey(),
-                                targetTable,
-                                describe(existing),
-                                describe(item));
-        log.error(message);
-        throw new CsdsDuplicateRecordException(message);
+        log.error(
+                "Duplicate incoming CivilFeeID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.csdsId(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "Duplicate incoming CivilFeeID " + item.csdsId() + " detected for " + targetTable);
     }
 
     private IngressDiffRecord<FeeIngressRecord, FeeIngressRecord, FeeIngressRecord>
-            determineDiffRecord(FeeIngressRecord existing, FeeIngressRecord incoming) {
+            determineDiffRecord(
+                    FeeIngressRecord existing,
+                    FeeIngressRecord incoming,
+                    FeeIngressRecord intended) {
         if (existing == null) {
             return new IngressDiffRecord<>(
                     IngressOperation.INSERT,
                     incoming,
                     null,
-                    incoming,
+                    intended,
                     INSERT_REASON_NO_EXISTING_MATCH);
         }
 
@@ -120,17 +131,12 @@ public class FeeDiffService implements IngressDiffService<FeeDiffRequest, FeeDif
                 IngressOperation.UPDATE,
                 incoming,
                 existing,
-                incoming,
+                intended,
                 UPDATE_REASON_EXISTING_MATCH);
     }
 
     private String describe(FeeIngressRecord item) {
-        return "civilFeeId=%s, pssId=%s, reference=%s, startDate=%s, version=%s"
-                .formatted(
-                        item.id(),
-                        item.pssId(),
-                        item.reference(),
-                        item.startDate(),
-                        item.version());
+        return "feeId=%s, civilFeeId=%s, businessKey=%s, version=%s"
+                .formatted(item.id(), item.csdsId(), item.businessKey(), item.version());
     }
 }

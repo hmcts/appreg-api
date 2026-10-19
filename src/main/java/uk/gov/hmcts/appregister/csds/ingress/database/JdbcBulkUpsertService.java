@@ -22,15 +22,15 @@ public class JdbcBulkUpsertService {
 
     public <T> int[] upsertBatch(
             String tableName,
-            List<String> primaryKeys,
+            String primaryKey,
             List<T> records,
             IngressDatabaseRowMapper<T> rowMapper) {
-        return upsertBatch(tableName, primaryKeys, records, rowMapper, item -> null);
+        return upsertBatch(tableName, primaryKey, records, rowMapper, item -> null);
     }
 
     public <T> int[] upsertBatch(
             String tableName,
-            List<String> primaryKeys,
+            String primaryKey,
             List<T> records,
             IngressDatabaseRowMapper<T> rowMapper,
             Function<T, Long> keyExtractor) {
@@ -39,15 +39,7 @@ public class JdbcBulkUpsertService {
         }
 
         CsdsSqlIdentifierValidator.requireValid(tableName, "tableName");
-        if (primaryKeys == null
-                || primaryKeys.isEmpty()
-                || primaryKeys.stream().distinct().count() != primaryKeys.size()) {
-            throw new IllegalArgumentException("primaryKeys must be non-empty and distinct");
-        }
-        primaryKeys.forEach(key -> CsdsSqlIdentifierValidator.requireValid(key, "primaryKey"));
-        if (!rowMapper.columns().containsAll(primaryKeys)) {
-            throw new IllegalArgumentException("primaryKeys must be present in the mapped columns");
-        }
+        CsdsSqlIdentifierValidator.requireValid(primaryKey, "primaryKey");
         rowMapper
                 .columns()
                 .forEach(column -> CsdsSqlIdentifierValidator.requireValid(column, "column"));
@@ -71,7 +63,7 @@ public class JdbcBulkUpsertService {
                                 CsdsSqlIdentifierValidator.requireValid(
                                         column, "updateExpression"));
 
-        val sql = buildUpsertSql(tableName, primaryKeys, rowMapper);
+        val sql = buildUpsertSql(tableName, primaryKey, rowMapper);
         val parameters =
                 records.stream()
                         .map(rowMapper::toRow)
@@ -85,17 +77,14 @@ public class JdbcBulkUpsertService {
                     jdbcBatchFailureIsolationService.identifyFailures(
                             sql, records, rowMapper::toRow, keyExtractor, ex);
             throw new CsdsBatchUpsertException(
-                    "CSDS batch upsert failed for "
-                            + tableName
-                            + "."
-                            + String.join(", ", primaryKeys),
+                    "CSDS batch upsert failed for " + tableName + "." + primaryKey,
                     ex,
                     new ArrayList<>(failures));
         }
     }
 
     String buildUpsertSql(
-            String tableName, List<String> primaryKeys, IngressDatabaseRowMapper<?> rowMapper) {
+            String tableName, String primaryKey, IngressDatabaseRowMapper<?> rowMapper) {
         val insertColumns = String.join(", ", rowMapper.columns());
         val insertValues =
                 rowMapper.columns().stream()
@@ -107,7 +96,6 @@ public class JdbcBulkUpsertService {
                         .toList();
         val updateAssignments =
                 rowMapper.updatableColumns().stream()
-                        .filter(column -> !primaryKeys.contains(column))
                         .map(
                                 column ->
                                         column
@@ -120,16 +108,15 @@ public class JdbcBulkUpsertService {
         return """
                INSERT INTO %s.%s (%s)
                VALUES (%s)
-               ON CONFLICT (%s) %s
+               ON CONFLICT (%s) DO UPDATE
+               SET %s
                """
                 .formatted(
                         schema,
                         tableName,
                         insertColumns,
                         String.join(", ", insertValues),
-                        String.join(", ", primaryKeys),
-                        updateAssignments.isEmpty()
-                                ? "DO NOTHING"
-                                : "DO UPDATE SET " + String.join(", ", updateAssignments));
+                        primaryKey,
+                        String.join(", ", updateAssignments));
     }
 }

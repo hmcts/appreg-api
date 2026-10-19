@@ -15,9 +15,6 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
  * <p>Provides access to National Court Houses (NCH) stored in the {@code national_court_houses}
  * table. Includes custom queries for retrieving active court locations by code/date and paginated
  * searches with optional filters.
- *
- * <p>Ingress identity is the case-sensitive location code. Public code lookups ignore case, so
- * case-distinct codes retain their deterministic ordering.
  */
 public interface NationalCourtHouseRepository extends JpaRepository<NationalCourtHouse, Long> {
 
@@ -33,8 +30,7 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
      *   <li>{@code endDate} is {@code null} or on/after {@code date}
      * </ul>
      *
-     * <p>This query may return zero, one, or multiple results. Service layer is responsible for
-     * selecting the preferred active record.
+     * <p>Selects the highest-ID date-valid version.
      *
      * @param code business identifier for the Court Location
      * @param date date on which the Court Location must be valid
@@ -46,12 +42,13 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
         FROM NationalCourtHouse nch
         WHERE nch.courtType = 'CHOA'
           AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
-          AND nch.startDate <= :date
-          AND (nch.endDate IS NULL OR nch.endDate >= :date)
-        ORDER BY CASE WHEN nch.endDate IS NULL THEN 0 ELSE 1 END,
-                 nch.endDate DESC,
-                 nch.startDate DESC,
-                 nch.id DESC
+          AND nch.id = (
+              SELECT MAX(v.id) FROM NationalCourtHouse v
+              WHERE v.courtType = 'CHOA'
+                AND LOWER(v.courtLocationCode) = LOWER(nch.courtLocationCode)
+                AND v.startDate <= :date
+                AND (v.endDate IS NULL OR v.endDate >= :date)
+          )
         """)
     List<NationalCourtHouse> findActiveCourtsWithDate(
             @Param("code") String code, @Param("date") LocalDate date);
@@ -68,8 +65,7 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
      *   <li>{@code endDate} is {@code null} or on/after today
      * </ul>
      *
-     * <p>This query may return zero, one, or multiple results. Service layer is responsible for
-     * selecting the preferred active record.
+     * <p>Selects the highest-ID date-valid version.
      *
      * @param code business identifier for the Court Location
      * @param date active date to evaluate against
@@ -81,12 +77,13 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
         FROM NationalCourtHouse nch
         WHERE nch.courtType = 'CHOA'
           AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
-          AND nch.startDate <= :date
-          AND (nch.endDate IS NULL OR nch.endDate >= :date)
-        ORDER BY CASE WHEN nch.endDate IS NULL THEN 0 ELSE 1 END,
-                 nch.endDate DESC,
-                 nch.startDate DESC,
-                 nch.id DESC
+          AND nch.id = (
+              SELECT MAX(v.id) FROM NationalCourtHouse v
+              WHERE v.courtType = 'CHOA'
+                AND LOWER(v.courtLocationCode) = LOWER(nch.courtLocationCode)
+                AND v.startDate <= :date
+                AND (v.endDate IS NULL OR v.endDate >= :date)
+          )
         """)
     List<NationalCourtHouse> findActiveCourts(
             @Param("code") String code, @Param("date") LocalDate date);
@@ -112,8 +109,13 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
         SELECT nch
         FROM NationalCourtHouse nch
         WHERE nch.courtType = 'CHOA'
-          AND nch.startDate <= :date
-          AND (nch.endDate IS NULL OR nch.endDate >= :date)
+          AND nch.id = (
+              SELECT MAX(v.id) FROM NationalCourtHouse v
+              WHERE v.courtType = 'CHOA'
+                AND LOWER(v.courtLocationCode) = LOWER(nch.courtLocationCode)
+                AND v.startDate <= :date
+                AND (v.endDate IS NULL OR v.endDate >= :date)
+          )
           AND (:code IS NULL OR LOWER(nch.courtLocationCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%'))
           AND (:name IS NULL OR LOWER(nch.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%'))
         """)

@@ -115,8 +115,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(11.0),
                         Optional.of("CO5.2"),
-                        Optional.of("JP perform function away from court"),
-                        Optional.of(29.0),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(40.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -173,8 +173,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(11.0),
                         Optional.of("CO5.2"),
-                        Optional.of("JP perform function away from court"),
-                        Optional.of(29.0),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(40.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -230,8 +230,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(10.0),
                         Optional.of("CO5.2"),
-                        Optional.of("JP perform function away from court"),
-                        Optional.of(25.0),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(70.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -332,8 +332,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     }
 
     @Test
-    void givenDeduplicatedApplicationCode_whenGetApplicationCodes_thenReturnSingleRetainedRecord()
-            throws MalformedURLException, JOSEException {
+    void
+            givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
+                    throws MalformedURLException, JOSEException {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
@@ -351,9 +352,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(1, page.getContent().size());
         assertEquals(DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
         assertEquals(COPY_DOCUMENTS_ELECTRONIC, page.getContent().getFirst().getTitle());
+        assertEquals(1, page.getContent().size());
     }
 
     @Test
@@ -667,7 +668,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
 
         // make the assertions
-        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 105, 210);
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 105, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -684,7 +686,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                 "Certified copy of a memorandum of conviction.",
                 firstEntry.getFeeDescription().get());
         assertEquals(1500L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(2900L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -724,7 +726,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(2900, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+        assertEquals(4000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
         assertTrue(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
@@ -1248,8 +1250,9 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
     }
 
     @Test
-    void givenValidRequest_whenGetApplicationCodeAfterDeduplication_thenReturnRetainedRecord()
-            throws URISyntaxException, MalformedURLException, JOSEException {
+    void
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnHighestIdActiveRecord()
+                    throws URISyntaxException, MalformedURLException, JOSEException {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -1270,7 +1273,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
         ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
         assertEquals("MS99006", response.getApplicationCode());
-        assertEquals(COPY_DOCUMENTS_ELECTRONIC, response.getTitle());
+        assertEquals("Copy documents (electronic)", response.getTitle());
         assertTrue(response.getEndDate().isPresent());
     }
 
@@ -1684,11 +1687,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
             offsiteFee.setDescription(OFFSITE_FEE_DESCRIPTION);
             offsiteFee.setAmount(BigDecimal.valueOf(70));
             offsiteFee.setOffsite(true);
-            // Offsite status is not part of the migrated primary key.
-            offsiteFee.setStartDate(
-                    offsiteFeeStartDate.equals(mainFeeStartDate)
-                            ? offsiteFeeStartDate.minusDays(1)
-                            : offsiteFeeStartDate);
+            offsiteFee.setStartDate(offsiteFeeStartDate);
             offsiteFee.setEndDate(null);
             persistance.save(offsiteFee);
         } finally {

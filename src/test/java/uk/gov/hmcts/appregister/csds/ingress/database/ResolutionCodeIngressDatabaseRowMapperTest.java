@@ -27,11 +27,13 @@ class ResolutionCodeIngressDatabaseRowMapperTest {
                         "email2@example.com",
                         LocalDate.of(2020, Month.JANUARY, 1),
                         LocalDate.of(2020, Month.FEBRUARY, 1),
-                        3L);
+                        3L,
+                        123L);
 
         var row = mapper.toRow(item);
 
-        assertThat(mapper.columns()).contains("rc_id", "changed_date", "user_name");
+        assertThat(mapper.columns()).contains("rc_id", "csds_id", "changed_date", "user_name");
+        assertThat(row).containsEntry("csds_id", 123L);
         assertThat(mapper.columns()).doesNotContain("bulk_respondent_allowed");
         assertThat(mapper.updatableColumns()).doesNotContain("rc_id");
         assertThat(mapper.updatableColumns()).doesNotContain("bulk_respondent_allowed");
@@ -57,6 +59,7 @@ class ResolutionCodeIngressDatabaseRowMapperTest {
     void given_resultSet_when_mapRow_then_createExpectedRecord() throws Exception {
         ResultSet rs = mock(ResultSet.class);
         when(rs.getLong("rc_id")).thenReturn(12L);
+        when(rs.getLong("csds_id")).thenReturn(123L);
         when(rs.getString("resolution_code")).thenReturn("APPC");
         when(rs.getString("resolution_code_title")).thenReturn("Title");
         when(rs.getString("resolution_code_wording")).thenReturn("Wording");
@@ -83,6 +86,9 @@ class ResolutionCodeIngressDatabaseRowMapperTest {
                                 "email2@example.com",
                                 LocalDate.of(2020, Month.JANUARY, 1),
                                 LocalDate.of(2020, Month.FEBRUARY, 1),
-                                3L));
+                                3L,
+                                123L));
+        when(rs.wasNull()).thenReturn(true);
+        assertThat(mapper.mapRow(rs, 0).csdsId()).isNull();
     }
 }

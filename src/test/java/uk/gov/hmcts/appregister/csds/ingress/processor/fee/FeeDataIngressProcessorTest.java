@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.fee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -17,22 +16,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -40,6 +32,8 @@ import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditService;
+import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
+import uk.gov.hmcts.appregister.csds.ingress.database.FailedUpsertRecord;
 import uk.gov.hmcts.appregister.csds.ingress.database.FeeIngressDatabaseRowMapper;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcBulkUpsertService;
 import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressBackupService;
@@ -84,14 +78,13 @@ class FeeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper,
-                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
+                        rowMapper);
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
         return new CsdsIngressTransactionRunner() {
             @Override
-            public <T> T execute(Supplier<T> supplier) {
+            public <T> T execute(java.util.function.Supplier<T> supplier) {
                 return supplier.get();
             }
         };
@@ -127,7 +120,7 @@ class FeeDataIngressProcessorTest {
     }
 
     @Test
-    void given_processedData_when_preProcess_then_preserveIncomingOrderWithoutResolvingIds() {
+    void given_processedData_when_preProcess_then_addFeeIdAndPreserveIncomingOrder() {
         var preProcessed =
                 processor.preProcess(
                         List.of(
@@ -138,14 +131,18 @@ class FeeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
-                .allSatisfy(item -> assertThat(item.has("FEE_ID")).isFalse());
+                .extracting(item -> item.get("FEE_ID").longValue())
+                .containsExactly(
+                        FeeIngressRecord.calculateId(null, 3L),
+                        FeeIngressRecord.calculateId(null, 1L),
+                        FeeIngressRecord.calculateId(null, 2L));
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(item -> item.get("CivilFeeID").longValue())
                 .containsExactly(3L, 1L, 2L);
     }
 
     @Test
-    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_preserveSource() {
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addFeeId() {
         var sourceRecord = createSourceRecord(3L, "CO3.1", "Fee 3", 1L);
         sourceRecord.remove(
                 List.of(
@@ -166,19 +163,17 @@ class FeeDataIngressProcessorTest {
 
         var preProcessed = processor.preProcess(List.of(createPageResponse(sourceRecord)));
 
-        assertThat(extractRecordsFromPage(preProcessed.getFirst()).getFirst())
-                .isEqualTo(sourceRecord);
+        assertThat(
+                        extractRecordsFromPage(preProcessed.getFirst())
+                                .getFirst()
+                                .get("FEE_ID")
+                                .longValue())
+                .isEqualTo(FeeIngressRecord.calculateId(null, 3L));
     }
 
-    @ParameterizedTest
-    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
-    void given_processedData_when_apply_then_logsDiffAgainstExistingFees_and_writesComparisonFiles(
-            String referenceField, String startDateField) throws Exception {
-        properties
-                .getProcessors()
-                .getFee()
-                .setBusinessKeys(List.of(referenceField, startDateField));
-        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
+    @Test
+    void given_processedData_when_apply_then_logsDiffAgainstExistingFees_and_writesComparisonFiles()
+            throws Exception {
         var existingUpdated =
                 new FeeIngressRecord(
                         33L,
@@ -213,26 +208,6 @@ class FeeDataIngressProcessorTest {
         processorLogCaptor.clearLogs();
 
         processor.apply(processor.preProcess(processedData));
-
-        verify(csdsAuditService)
-                .persistSuccessAudits(
-                        eq(CsdsAuditLevel.DEBUG),
-                        argThat(
-                                entries ->
-                                        entries.size() == 2
-                                                && entries.stream()
-                                                        .allMatch(
-                                                                entry ->
-                                                                        entry.csdsJson()
-                                                                                        .contains(
-                                                                                                "\""
-                                                                                                        + referenceField
-                                                                                                        + "\":")
-                                                                                && entry.csdsJson()
-                                                                                        .contains(
-                                                                                                "\""
-                                                                                                        + startDateField
-                                                                                                        + "\":"))));
 
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("incoming=2, existing=2, inserts=1, updates=1"));
@@ -356,28 +331,25 @@ class FeeDataIngressProcessorTest {
                         diffRecord -> {
                             assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
                             assertThat(diffRecord.existing()).isNull();
-                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().csdsId()).isEqualTo(697L);
                             assertThat(diffRecord.intended().id())
                                     .isEqualTo(FeeIngressRecord.calculateId(null, 697L));
                         });
     }
 
     @Test
-    void given_pssFixedListIdPresent_when_apply_then_useItAsTheResolvedKey() {
-        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of());
-
-        var logCaptor = LogCaptor.forClass(FeeDiffReportingService.class);
-        logCaptor.clearLogs();
-
-        processor.apply(
-                processor.preProcess(
-                        List.of(
-                                createPageResponse(
-                                        createSourceRecordWithoutCivilFeeId(
-                                                33L, "CO10.1", "Fee 1", 1L, "245.00")))));
-
-        assertThat(logCaptor.getInfoLogs())
-                .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
+    void given_missingRemoteIdWithLegacyId_when_apply_then_reject() {
+        assertThatThrownBy(
+                        () ->
+                                processor.preProcess(
+                                        List.of(
+                                                createPageResponse(
+                                                        createSourceRecordWithoutCivilFeeId(
+                                                                33L, "CO10.1", "Fee 1", 1L,
+                                                                "245.00")))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("CivilFeeID");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
     @Test
@@ -425,29 +397,15 @@ class FeeDataIngressProcessorTest {
     }
 
     @Test
-    void given_sourceIdsMissingForExistingPair_when_ingest_then_preserveStoredId() {
+    void given_pssFixedListIdFieldMissing_when_preProcess_then_failBeforeDatabaseRead() {
         var sourceRecord = createSourceRecord(696L, "CO10.1", "Fee 1", 1L);
-        sourceRecord.remove(List.of("PSSFixedListID", "CivilFeeID"));
+        sourceRecord.remove("PSSFixedListID");
         List<JsonNode> processedData = List.of(createPageResponse(sourceRecord));
-        when(tableReadService.loadAll("fee_staging", rowMapper))
-                .thenReturn(
-                        List.of(
-                                new FeeIngressRecord(
-                                        33L,
-                                        "CO10.1",
-                                        "Old",
-                                        BigDecimal.TEN,
-                                        LocalDate.parse("2020-01-01"),
-                                        null,
-                                        1L)));
-        assertThat(processor.ingest(processedData).getUpdated()).isEqualTo(1);
-        verify(bulkUpsertService)
-                .upsertBatch(
-                        eq("fee_staging"),
-                        eq(List.of("fee_reference", "fee_start_date")),
-                        argThat(rows -> rows.getFirst().id().equals(33L)),
-                        same(rowMapper),
-                        any());
+
+        assertThatThrownBy(() -> processor.preProcess(processedData))
+                .isInstanceOf(CsdsPayloadValidationException.class)
+                .hasMessageContaining("PSSFixedListID");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
     @Test
@@ -490,14 +448,14 @@ class FeeDataIngressProcessorTest {
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("fee_staging"),
-                        eq(List.of("fee_reference", "fee_start_date")),
+                        eq("fee_id"),
                         argThat(
                                 rows ->
                                         rows.size() == 1
                                                 && Long.valueOf(1L)
                                                         .equals(rows.getFirst().version())),
                         same(rowMapper),
-                        any());
+                        org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -512,225 +470,42 @@ class FeeDataIngressProcessorTest {
         verify(ingressClient).retrieveJson("/count/APPREGISTER/CivilFee/GD");
     }
 
-    @ParameterizedTest
-    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
-    void given_duplicateBusinessPair_when_apply_then_throwException(
-            String referenceField, String startDateField) {
-        properties
-                .getProcessors()
-                .getFee()
-                .setBusinessKeys(List.of(referenceField, startDateField));
-        for (var field : List.of(referenceField, startDateField)) {
-            var missingField = createSourceRecord(101L, "FEE", "Description", 1L);
-            missingField.remove(field);
-            assertThatThrownBy(
-                            () -> processor.preProcess(List.of(createPageResponse(missingField))))
-                    .hasMessageContaining(field);
-        }
+    @Test
+    void given_duplicateRemoteIdAcrossLegacyIds_when_apply_then_throwException() {
         var logCaptor = LogCaptor.forClass(FeeDiffService.class);
         logCaptor.clearLogs();
 
         List<JsonNode> processedData =
                 List.of(
                         createPageResponse(
-                                createSourceRecordWithoutCivilFeeId(
-                                        33L, "CO10.1", "Fee 1", 1L, "245.00"),
-                                createSourceRecordWithoutCivilFeeId(
-                                        34L, "CO10.1", "Fee 2", 2L, "250.00")));
+                                createSourceRecordWithPssFixedListId(
+                                        33L, 696L, "CO10.1", "Fee 1", 1L, "245.00"),
+                                createSourceRecordWithPssFixedListId(
+                                        34L, 696L, "CO10.2", "Fee 2", 2L, "250.00")));
         var preProcessed = processor.preProcess(processedData);
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming fee business key")
-                .hasMessageContaining("Existing record [")
-                .hasMessageContaining("duplicate record [");
+                .hasMessageContaining("Duplicate incoming CivilFeeID 696");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
-                                log.contains("Duplicate incoming fee business key")
+                                log.contains(
+                                                "Duplicate incoming CivilFeeID 696 detected for fee_staging")
                                         && log.contains("duplicate record"));
-        verifyNoInteractions(tableReadService, bulkUpsertService);
-    }
-
-    @Test
-    void changedAndOverflowingSourceIdsDoNotReplaceStoredIdentityOrAuditSource() {
-        var existing =
-                new FeeIngressRecord(
-                        33L,
-                        "CO10.1",
-                        "Old",
-                        BigDecimal.TEN,
-                        LocalDate.parse("2020-01-01"),
-                        null,
-                        1L);
-        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(existing));
-        var source =
-                createSourceRecord(Long.MAX_VALUE, "CO10.1", "Updated", 2L)
-                        .put("PSSFixedListID", 9999L)
-                        .put("FEE_ID", 8888L);
-        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
-        assertThat(processor.ingest(List.of(createPageResponse(source))).getUpdated()).isEqualTo(1);
-        verify(bulkUpsertService)
-                .upsertBatch(
-                        eq("fee_staging"),
-                        eq(List.of("fee_reference", "fee_start_date")),
-                        argThat(rows -> rows.getFirst().id().equals(33L)),
-                        same(rowMapper),
-                        any());
-        assertThat(source.get("FEE_ID").longValue()).isEqualTo(8888L);
-    }
-
-    @ParameterizedTest
-    @CsvSource({"FeeReference,StartDate", "IncomingReference,EffectiveFrom"})
-    void sameReferenceWithDifferentStartsIsValidButRepeatedPairAcrossPagesIsNot(
-            String referenceField, String startDateField) {
-        properties
-                .getProcessors()
-                .getFee()
-                .setBusinessKeys(List.of(referenceField, startDateField));
-        var first = createSourceRecord(1L, "PAIR", "First", 1L);
-        var second = createSourceRecord(2L, "PAIR", "Second", 1L).put(startDateField, "2021-01-01");
-        assertThat(processor.ingest(List.of(createPageResponse(first, second))).getInserted())
-                .isEqualTo(2);
-        assertThatThrownBy(
-                        () ->
-                                processor.ingest(
-                                        List.of(
-                                                createPageResponse(first),
-                                                createPageResponse(
-                                                        first.deepCopy().put("CivilFeeID", 3L)))))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming fee business key");
-    }
-
-    @Test
-    void invalidNewIdsAndCollidingLegacyIdsReject() {
-        var owner =
-                new FeeIngressRecord(
-                        100033L,
-                        "OWNER",
-                        "Old",
-                        BigDecimal.TEN,
-                        LocalDate.parse("2020-01-01"),
-                        null,
-                        1L);
-        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(owner));
-        var valid = createSourceRecord(1L, "VALID", "Valid", 1L);
-        var missing = createSourceRecord(null, "MISSING", "Missing", 1L);
-        var overflow = createSourceRecord(Long.MAX_VALUE, "OVERFLOW", "Overflow", 1L);
-        var generatedCollision = createSourceRecord(33L, "OTHER", "Other", 1L);
-        final var incomingCollision =
-                createSourceRecordWithoutCivilFeeId(100001L, "OTHER", "Other", 1L, "1");
-        for (var invalid :
-                List.of(missing, missing.deepCopy().put("CivilFeeID", "invalid"), overflow)) {
-            assertThatThrownBy(
-                            () ->
-                                    processor.ingest(
-                                            List.of(
-                                                    createPageResponse(valid),
-                                                    createPageResponse(invalid))))
-                    .isInstanceOf(
-                            invalid == overflow
-                                    ? ArithmeticException.class
-                                    : AppRegistryException.class);
-        }
-        verifyNoInteractions(bulkUpsertService);
-
-        assertThatThrownBy(
-                        () ->
-                                processor.diff(
-                                        processor.preProcess(
-                                                List.of(
-                                                        createPageResponse(valid),
-                                                        createPageResponse(generatedCollision)))))
-                .hasMessageContaining("Legacy FEE_ID 100033");
-
-        assertThatThrownBy(
-                        () ->
-                                processor.ingest(
-                                        List.of(
-                                                createPageResponse(valid),
-                                                createPageResponse(incomingCollision))))
-                .hasMessageContaining("Legacy FEE_ID 100001");
-        verifyNoInteractions(bulkUpsertService);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"StartDate", "EffectiveFrom"})
-    void ukTodayAndExpiredAreRetainedTomorrowIsWarnedAndExcludedBeforeIdentityChecks(
-            String startDateField) {
-        properties
-                .getProcessors()
-                .getFee()
-                .setBusinessKeys(List.of("FeeReference", startDateField));
-        var today = createSourceRecord(1L, "DATE", "Today", 1L).put(startDateField, "2026-07-02");
-        var future =
-                today.deepCopy()
-                        .put(startDateField, "2026-07-03")
-                        .put("CivilFeeID", Long.MAX_VALUE);
-        var expired = createSourceRecord(2L, "OLD", "Expired", 1L).put("EndDate", "2021-01-01");
-        try (var logs = LogCaptor.forClass(FeeDataIngressProcessor.class)) {
-            var retained =
-                    processor.preProcess(
-                            List.of(
-                                    createPageResponse(today),
-                                    createPageResponse(future, expired)));
-            assertThat(extractRecordsFromPage(retained.getFirst())).containsExactly(today, expired);
-            assertThat(logs.getWarnLogs())
-                    .singleElement()
-                    .asString()
-                    .contains("DATE", "2026-07-03", "2026-07-02");
-        }
-        assertThat(
-                        processor
-                                .ingest(
-                                        List.of(
-                                                createPageResponse(
-                                                        today, future, future.deepCopy())))
-                                .getInserted())
-                .isEqualTo(1);
-        assertThat(
-                        processor
-                                .ingest(List.of(createPageResponse(future, future.deepCopy())))
-                                .getInserted())
-                .isZero();
-        assertThat(processor.preProcess(List.of())).isEmpty();
-    }
-
-    @Test
-    void everyDateIsValidatedIncludingFutureRecordsAndLaterPagesBeforeAnyDatabaseAccess() {
-        var valid = createSourceRecord(1L, "VALID", "Valid", 1L);
-        var missing = valid.deepCopy();
-        missing.remove("StartDate");
-        for (var invalid :
-                List.of(
-                        missing,
-                        valid.deepCopy().putNull("StartDate"),
-                        valid.deepCopy().put("StartDate", ""),
-                        valid.deepCopy().put("StartDate", "2026-02-30"),
-                        valid.deepCopy().put("StartDate", "2026-07-03").put("EndDate", "invalid"),
-                        valid.deepCopy().put("EndDate", ""))) {
-            assertThatThrownBy(
-                            () ->
-                                    processor.ingest(
-                                            List.of(
-                                                    createPageResponse(valid),
-                                                    createPageResponse(invalid))))
-                    .isInstanceOf(AppRegistryException.class);
-        }
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
 
     private FeeIngressRecord toIngressRecord(JsonNode node) {
         return new FeeIngressRecord(
+                nullableLong(node, "PSSFixedListID"),
                 nullableLong(node, "CivilFeeID"),
                 nullableText(node, "FeeReference"),
                 nullableText(node, "Description"),
                 nullableBigDecimal(node, "FeeValue"),
                 nullableLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
-                resolvedVersion(node),
-                nullableLong(node, "PSSFixedListID"));
+                resolvedVersion(node));
     }
 
     private ObjectNode createPageResponse(ObjectNode... records) {
@@ -787,14 +562,10 @@ class FeeDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put(
-                                properties.getProcessors().getFee().getBusinessKeys().getFirst(),
-                                feeReference)
+                        .put("FeeReference", feeReference)
                         .put("Description", description)
                         .put("FeeValue", feeValue)
-                        .put(
-                                properties.getProcessors().getFee().getBusinessKeys().get(1),
-                                "2020-01-01")
+                        .put("StartDate", "2020-01-01")
                         .putNull("EndDate")
                         .putNull("Notes")
                         .put("CurrentRecordIndicator", false)
@@ -872,6 +643,218 @@ class FeeDataIngressProcessorTest {
         }
 
         sourceRecord.put(fieldName, value);
+    }
+
+    @Test
+    void compositeKeyAllowsDifferentStartDatesButRejectsSameKeyAcrossPages() {
+        var first = createSourceRecord(696L, "CO10.1", "First", 1L);
+        var second = createSourceRecord(697L, "co10.1", "Second", 1L);
+        second.put("StartDate", "2099-01-01");
+        var pages = List.<JsonNode>of(createPageResponse(first), createPageResponse(second));
+        assertThat(processor.diff(processor.preProcess(pages)).diffRecords()).hasSize(2);
+        second.put("StartDate", first.get("StartDate").asText());
+        assertThatThrownBy(() -> processor.apply(processor.preProcess(pages)))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("business key");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void storesNewVersionAndSkipsReplayWithoutOverwritingHistory() throws Exception {
+        var source =
+                createSourceRecordWithPssFixedListId(
+                        33L, 697L, "CO10.1", "Future version", 2L, "300.00");
+        source.put("StartDate", "2099-01-01").put("FEE_ID", 999);
+        var legacy =
+                new FeeIngressRecord(
+                        33L,
+                        696L,
+                        "CO10.1",
+                        "Original",
+                        new BigDecimal("245.00"),
+                        LocalDate.of(2024, 3, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(legacy));
+        var pages = processor.preProcess(List.of(createPageResponse(source)));
+        var diff = processor.diff(pages);
+        var intended = diff.diffRecords().getFirst().intended();
+        assertThat(intended.id()).isEqualTo(100697L);
+        assertThat(intended.csdsId()).isEqualTo(697L);
+        assertThat(intended.startDate()).isEqualTo(LocalDate.of(2099, 1, 1));
+        assertThat(diff.existingById().get(33L)).isEqualTo(legacy);
+        processor.report(pages, diff);
+        try (var reports = Files.list(tempDir)) {
+            var report =
+                    reports.filter(path -> path.getFileName().toString().startsWith("fee_diff_"))
+                            .findFirst()
+                            .orElseThrow();
+            assertThat(Files.readString(report)).contains("\"33\",\"697\",\"100697\",\"insert\"");
+        }
+        assertThat(processor.buildSuccessAudits(pages, diff).toString())
+                .contains("100697", "697", "Future version");
+        var failure =
+                new CsdsBatchUpsertException(
+                        "failed", null, List.of(new FailedUpsertRecord<>(intended, "failed row")));
+        assertThat(processor.buildFailureAudits(pages, diff, failure).toString())
+                .contains("100697", "697", "Future version", "failed row");
+        when(tableReadService.loadAll("fee_staging", rowMapper))
+                .thenReturn(List.of(legacy, intended));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+    }
+
+    @Test
+    void enrichesUnlinkedOffsetIdWithoutPssIdAndSkipsReplay() {
+        var original =
+                new FeeIngressRecord(
+                        100696L,
+                        "CO10.1",
+                        "Original",
+                        BigDecimal.ONE,
+                        LocalDate.of(2024, 3, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(original));
+        var source = createSourceRecord(696L, "co10.1", "Updated", 2L);
+        source.put("StartDate", "2024-03-01");
+        var pages = processor.preProcess(List.of(createPageResponse(source)));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.existing()).isEqualTo(original);
+        assertThat(change.intended().id()).isEqualTo(100696L);
+        assertThat(change.intended().csdsId()).isEqualTo(696L);
+        when(tableReadService.loadAll("fee_staging", rowMapper))
+                .thenReturn(List.of(change.intended()));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(original));
+        source.put("StartDate", "2025-01-01");
+        assertThatThrownBy(
+                        () ->
+                                processor.diff(
+                                        processor.preProcess(List.of(createPageResponse(source)))))
+                .hasMessageContaining("conflicts");
+    }
+
+    @Test
+    void enrichesOnlyMatchingLegacyCompositeKey() {
+        var source =
+                createSourceRecordWithPssFixedListId(33L, 696L, "co10.1", "Updated", 2L, "300");
+        source.put("StartDate", "2024-03-01");
+        var legacy =
+                new FeeIngressRecord(
+                        33L,
+                        "CO10.1",
+                        "Original",
+                        BigDecimal.ONE,
+                        LocalDate.of(2024, 3, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(legacy));
+        var diff = processor.diff(processor.preProcess(List.of(createPageResponse(source))));
+        assertThat(diff.diffRecords().getFirst().intended().id()).isEqualTo(33L);
+        assertThat(diff.diffRecords().getFirst().intended().csdsId()).isEqualTo(696L);
+        source.put("StartDate", "2025-01-01");
+        assertThat(
+                        processor
+                                .diff(processor.preProcess(List.of(createPageResponse(source))))
+                                .diffRecords()
+                                .getFirst()
+                                .intended()
+                                .id())
+                .isEqualTo(100696L);
+        source.put("StartDate", "2024-03-01").put("FeeReference", "OTHER");
+        assertThat(
+                        processor
+                                .diff(processor.preProcess(List.of(createPageResponse(source))))
+                                .diffRecords()
+                                .getFirst()
+                                .intended()
+                                .id())
+                .isEqualTo(100696L);
+    }
+
+    @Test
+    void rejectsOccupiedLocalIdsEvenWhenTheirOwnerIsBeingEnriched() {
+        var owner =
+                new FeeIngressRecord(
+                        100696L,
+                        "OTHER",
+                        "Owner",
+                        BigDecimal.ONE,
+                        LocalDate.of(2024, 3, 1),
+                        null,
+                        1L);
+        when(tableReadService.loadAll("fee_staging", rowMapper)).thenReturn(List.of(owner));
+        var incoming = createSourceRecord(696L, "CO10.1", "New", 1L);
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(incoming)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("conflicts");
+        var enrich =
+                createSourceRecordWithPssFixedListId(100696L, 697L, "OTHER", "Enrich", 1L, "10");
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(enrich, incoming)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("conflicts");
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(
+                                                List.of(createPageResponse(incoming, enrich)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("conflicts");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void rejectsInvalidIdentifiersAndMissingBusinessKeyParts() {
+        for (var field : List.of("CivilFeeID", "PSSFixedListID")) {
+            for (var invalid :
+                    List.of(
+                            OBJECT_MAPPER.getNodeFactory().numberNode(0),
+                            OBJECT_MAPPER.getNodeFactory().numberNode(-1),
+                            OBJECT_MAPPER.getNodeFactory().numberNode(1.5),
+                            OBJECT_MAPPER.getNodeFactory().textNode("696"),
+                            OBJECT_MAPPER
+                                    .getNodeFactory()
+                                    .numberNode(new BigDecimal("9223372036854775808")))) {
+                var source = createSourceRecord(696L, "CO10.1", "Fee", 1L);
+                source.set(field, invalid);
+                assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(source))))
+                        .isInstanceOf(AppRegistryException.class)
+                        .hasMessageContaining(field);
+            }
+        }
+        var source = createSourceRecord(696L, "CO10.1", "Fee", 1L);
+        source.put("CivilFeeID", 2147483648L);
+        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(source))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("CivilFeeID");
+        source.put("CivilFeeID", 696).put("FeeReference", " ");
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(List.of(createPageResponse(source)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("FeeReference");
+        source.put("FeeReference", "CO10.1").putNull("StartDate");
+        assertThatThrownBy(
+                        () ->
+                                processor.apply(
+                                        processor.preProcess(List.of(createPageResponse(source)))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("StartDate");
+        verifyNoInteractions(bulkUpsertService);
     }
 
     private List<JsonNode> extractRecordsFromPage(JsonNode page) {

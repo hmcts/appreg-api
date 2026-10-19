@@ -172,8 +172,9 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
     }
 
     @Test
-    void givenActiveCode_whenGetResultCodeByCodeAndDate_thenReturnsRequestedRow() throws Exception {
-        createDistinctActiveRows();
+    void givenDuplicateActiveRows_whenGetResultCodeByCodeAndDate_thenReturnsDeterministicRow()
+            throws Exception {
+        var expected = createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -190,14 +191,14 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
         var dto = resp.as(ResultCodeGetDetailDto.class);
         assertThat(dto.getResultCode()).isEqualTo(DUPLICATE_CODE);
-        assertThat(dto.getTitle()).isEqualTo(DUPLICATE_TITLE_2);
-        assertThat(dto.getEndDate().get()).isNull();
+        assertThat(dto.getTitle()).isEqualTo(expected.getTitle());
+        assertThat(dto.getEndDate().get()).isEqualTo(expected.getEndDate());
     }
 
     @Test
-    void givenDistinctActiveCodes_whenGetResultCodes_thenCallerSortControlsPageOrder()
+    void givenDuplicateActiveRows_whenGetResultCodes_thenCallerSortControlsPageOrder()
             throws Exception {
-        createDistinctActiveRows();
+        var expected = createDuplicateActiveRows();
 
         var token =
                 getATokenWithValidCredentials()
@@ -212,16 +213,15 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
                         List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new ResultCodeFilter(Optional.of("DUPTST0"), Optional.empty()),
+                        new ResultCodeFilter(Optional.of(DUPLICATE_CODE), Optional.empty()),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
-        assertThat(page.getContent()).hasSize(2);
-        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUPTST02");
-        assertThat(page.getContent().getFirst().getTitle()).isEqualTo(DUPLICATE_TITLE_1);
-        assertThat(page.getContent().get(1).getTitle()).isEqualTo(DUPLICATE_TITLE_2);
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo(DUPLICATE_CODE);
+        assertThat(page.getContent().getFirst().getTitle()).isEqualTo(expected.getTitle());
     }
 
     @Test
@@ -781,13 +781,15 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
         }
     }
 
-    private void createDistinctActiveRows() throws Exception {
-        createResultCode("DUPTST02", DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
-        createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
+    private ResolutionCode createDuplicateActiveRows() throws Exception {
+        var bounded =
+                createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE);
+        var openEnded = createResultCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null);
+        return bounded.getId() > openEnded.getId() ? bounded : openEnded;
     }
 
-    private void createResultCode(String code, String title, LocalDate startDate, LocalDate endDate)
-            throws Exception {
+    private ResolutionCode createResultCode(
+            String code, String title, LocalDate startDate, LocalDate endDate) throws Exception {
         var jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -800,6 +802,7 @@ class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
             resolutionCode.setStartDate(startDate);
             resolutionCode.setEndDate(endDate);
             persistance.save(resolutionCode);
+            return resolutionCode;
         } finally {
             SecurityContextHolder.clearContext();
         }

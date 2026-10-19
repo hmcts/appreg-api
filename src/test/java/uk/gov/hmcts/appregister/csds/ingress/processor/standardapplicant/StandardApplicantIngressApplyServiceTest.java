@@ -56,19 +56,19 @@ class StandardApplicantIngressApplyServiceTest {
                                         record,
                                         "no existing sa_id match")));
 
-        service.reconcileAndUpsert("standard_applicants_staging", List.of("sa_id"), diff);
+        service.reconcileAndUpsert("standard_applicants_staging", "sa_id", diff);
 
         var sqlCaptor = ArgumentCaptor.forClass(String.class);
         verify(jdbcTemplate)
                 .update(sqlCaptor.capture(), org.mockito.ArgumentMatchers.<Map<String, ?>>any());
         assertThat(sqlCaptor.getValue())
                 .contains("UPDATE appreg.standard_applicants_staging")
-                .contains("sa_id NOT IN (:incomingIds)")
+                .contains("standard_applicant_code NOT IN (:incomingCodes)")
                 .contains("version = version + 1");
         verify(bulkUpsertService)
                 .upsertBatch(
                         eq("standard_applicants_staging"),
-                        eq(List.of("sa_id")),
+                        eq("sa_id"),
                         eq(List.of(record)),
                         eq(rowMapper),
                         org.mockito.ArgumentMatchers.any());
@@ -76,6 +76,7 @@ class StandardApplicantIngressApplyServiceTest {
 
     private StandardApplicantIngressRecord record(Long id) {
         return new StandardApplicantIngressRecord(
+                id,
                 id,
                 "DCCMH",
                 LocalDate.of(2018, 8, 1),

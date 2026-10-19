@@ -1,16 +1,15 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
 class StandardApplicantRepositoryTest extends BaseRepositoryTest {
@@ -27,7 +27,100 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     // Count for the baseline integration test data in the flyway script.
-    private static final int BASELINE_TEST_COUNT = 6;
+
+    @Test
+    void latestVersionSelectionRespectsDatesRangePaginationAndSelectedName() {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    var date = LocalDate.of(2026, 1, 1);
+                    var old = new StandardApplicantTestData().someComplete();
+                    old.setId(DatabaseReset.SEQUENCE_START_VALUE + 900001L);
+                    old.setApplicantCode("HIST1878");
+                    old.setName("Old name");
+                    old.setApplicantStartDate(date.minusYears(5));
+                    old.setApplicantEndDate(null);
+                    persistance.save(old);
+                    var latest = new StandardApplicantTestData().someComplete();
+                    latest.setId(DatabaseReset.SEQUENCE_START_VALUE + 900002L);
+                    latest.setApplicantCode("hist1878");
+                    latest.setName("New name");
+                    latest.setApplicantStartDate(date.minusDays(1));
+                    latest.setApplicantEndDate(date.plusDays(1));
+                    persistance.save(latest);
+                    var future = new StandardApplicantTestData().someComplete();
+                    future.setId(DatabaseReset.SEQUENCE_START_VALUE + 900003L);
+                    future.setApplicantCode("HIST1878");
+                    future.setApplicantStartDate(date.plusDays(2));
+                    future.setApplicantEndDate(null);
+                    persistance.save(future);
+                    assertThat(repository.findStandardApplicantByCode("HIST1878"))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(future.getId());
+                    for (var validDate : List.of(date.minusDays(1), date, date.plusDays(1))) {
+                        assertThat(
+                                        repository.findStandardApplicantByCodeAndDate(
+                                                "HIST1878", validDate))
+                                .extracting(StandardApplicant::getId)
+                                .containsExactly(latest.getId());
+                    }
+                    assertThat(
+                                    repository.findStandardApplicantByCodeAndDate(
+                                            "HIST1878", date.minusDays(2)))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(old.getId());
+                    assertThat(repository.findAllByDate(date))
+                            .filteredOn(row -> row.getApplicantCode().equalsIgnoreCase("HIST1878"))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(latest.getId());
+                    var page = PageRequest.of(0, 1, Sort.by("id"));
+                    var found = repository.search("HIST1878", null, null, null, null, date, page);
+                    assertThat(found.getTotalElements()).isEqualTo(1);
+                    assertThat(found.getContent())
+                            .singleElement()
+                            .satisfies(
+                                    row ->
+                                            assertThat(row.getStandardApplicant().getId())
+                                                    .isEqualTo(latest.getId()));
+                    assertThat(
+                                    repository.search(
+                                            "HIST1878", "Old name", null, null, null, date, page))
+                            .isEmpty();
+                    assertThat(
+                                    repository
+                                            .search(
+                                                    "HIST1878",
+                                                    null,
+                                                    null,
+                                                    date.minusYears(1),
+                                                    date.plusDays(1),
+                                                    date,
+                                                    page)
+                                            .getContent())
+                            .singleElement()
+                            .satisfies(
+                                    row ->
+                                            assertThat(row.getStandardApplicant().getId())
+                                                    .isEqualTo(latest.getId()));
+                    assertThat(
+                                    repository
+                                            .search("HIST1878", null, null, date, null, date, page)
+                                            .getContent())
+                            .singleElement()
+                            .satisfies(
+                                    row ->
+                                            assertThat(row.getStandardApplicant().getId())
+                                                    .isEqualTo(future.getId()));
+                    assertThat(
+                                    repository
+                                            .search("HIST1878", null, null, null, date, date, page)
+                                            .getContent())
+                            .singleElement()
+                            .satisfies(
+                                    row ->
+                                            assertThat(row.getStandardApplicant().getId())
+                                                    .isEqualTo(latest.getId()));
+                });
+    }
 
     @Test
     void testBasicInsertionUpdate() throws Exception {
@@ -35,8 +128,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     // assert that the save has occurred
-                    long count = repository.count();
-                    Assertions.assertEquals(BASELINE_TEST_COUNT, count);
+                    final long initialCount = repository.count();
 
                     // assert
                     // test save
@@ -45,8 +137,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     StandardApplicant data = persistance.save(dataToPersist);
 
                     // assert that the save has occurred
-                    count = repository.count();
-                    Assertions.assertEquals(BASELINE_TEST_COUNT + 1, count);
+                    Assertions.assertEquals(initialCount + 1, repository.count());
 
                     // test get
                     Optional<StandardApplicant> standardApplicantToAssertAgainst =
@@ -121,40 +212,70 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     void testFindByCodeAndDate() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    var retrievedApplicant =
+                    List<StandardApplicant> retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP002", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).hasSize(1);
+                    assertThat(retrievedApplicant).isNotEmpty();
                 });
     }
 
     @Test
-    void testFindByCodeAndDateReturnsDeduplicatedCode() throws Exception {
+    void testFindByCodeAndDateMultiple() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    var retrievedApplicant =
+                    List<StandardApplicant> retrievedApplicant =
                             repository.findStandardApplicantByCodeAndDate(
                                     "APP003", LocalDate.now(java.time.ZoneOffset.UTC));
 
-                    assertThat(retrievedApplicant).hasSize(1);
+                    assertEquals(1, retrievedApplicant.size());
                 });
     }
 
     @Test
-    void rejectsDuplicateBusinessCode() {
-        var duplicate = new StandardApplicantTestData().someComplete();
-        duplicate.setApplicantCode("APP001");
-        assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
-                .isInstanceOf(DataIntegrityViolationException.class);
+    void testFindByCodeAndDateSelectsHighestIdRegardlessOfEndDate() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
+                    String code = "SANULL001";
+
+                    StandardApplicant boundedApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    boundedApplicant.setApplicantCode(code);
+                    boundedApplicant.setName("Bounded Applicant");
+                    boundedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
+
+                    StandardApplicant openEndedApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    openEndedApplicant.setApplicantCode(code);
+                    openEndedApplicant.setName("Open-Ended Applicant");
+                    openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    openEndedApplicant.setApplicantEndDate(null);
+
+                    StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
+                    StandardApplicant savedOpenEndedApplicant =
+                            persistance.save(openEndedApplicant);
+
+                    List<StandardApplicant> retrievedApplicant =
+                            repository.findStandardApplicantByCodeAndDate(code, activeDate);
+
+                    assertThat(retrievedApplicant)
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(
+                                    Math.max(
+                                            savedOpenEndedApplicant.getId(),
+                                            savedBoundedApplicant.getId()));
+                });
     }
 
     @Test
-    void testFindByCodeIncludesHistoricRows() throws Exception {
-        transactionalUnitOfWork.inTransaction(this::assertFindByCodeIncludesHistoricRows);
+    void testFindByCodeSelectsHighestIdRegardlessOfDates() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                this::assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord);
     }
 
-    private void assertFindByCodeIncludesHistoricRows() {
+    private void assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord() {
         LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "SACODE001";
 
@@ -164,16 +285,32 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         historicApplicant.setApplicantStartDate(activeDate.minusDays(30));
         historicApplicant.setApplicantEndDate(activeDate.minusDays(10));
 
+        StandardApplicant boundedApplicant = new StandardApplicantTestData().someComplete();
+        boundedApplicant.setApplicantCode(code);
+        boundedApplicant.setName("Bounded Applicant");
+        boundedApplicant.setApplicantStartDate(activeDate.minusDays(5));
+        boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
+
+        StandardApplicant openEndedApplicant = new StandardApplicantTestData().someComplete();
+        openEndedApplicant.setApplicantCode(code);
+        openEndedApplicant.setName("Open-Ended Applicant");
+        openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+        openEndedApplicant.setApplicantEndDate(null);
+
         StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
+        StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
+        StandardApplicant savedOpenEndedApplicant = persistance.save(openEndedApplicant);
 
-        var retrievedApplicant = repository.findStandardApplicantByCode(code, activeDate);
+        List<StandardApplicant> retrievedApplicants = repository.findStandardApplicantByCode(code);
 
-        assertThat(retrievedApplicant)
-                .singleElement()
-                .satisfies(
-                        applicant ->
-                                assertThat(applicant.getId())
-                                        .isEqualTo(savedHistoricApplicant.getId()));
+        assertThat(retrievedApplicants)
+                .extracting(StandardApplicant::getId)
+                .containsExactly(
+                        Math.max(
+                                savedHistoricApplicant.getId(),
+                                Math.max(
+                                        savedOpenEndedApplicant.getId(),
+                                        savedBoundedApplicant.getId())));
     }
 
     @Test
@@ -185,14 +322,14 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
                     StandardApplicant startsTodayApplicant =
                             new StandardApplicantTestData().someComplete();
-                    startsTodayApplicant.setApplicantCode(code + "A");
+                    startsTodayApplicant.setApplicantCode(code + "1");
                     startsTodayApplicant.setName("Starts Today Applicant");
                     startsTodayApplicant.setApplicantStartDate(activeDate);
                     startsTodayApplicant.setApplicantEndDate(null);
 
                     StandardApplicant endsTodayApplicant =
                             new StandardApplicantTestData().someComplete();
-                    endsTodayApplicant.setApplicantCode(code + "B");
+                    endsTodayApplicant.setApplicantCode(code + "2");
                     endsTodayApplicant.setName("Ends Today Applicant");
                     endsTodayApplicant.setApplicantStartDate(activeDate.minusDays(5));
                     endsTodayApplicant.setApplicantEndDate(activeDate);

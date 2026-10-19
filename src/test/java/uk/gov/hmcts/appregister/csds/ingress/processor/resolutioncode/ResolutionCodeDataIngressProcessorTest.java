@@ -2,10 +2,6 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.resolutioncode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -16,11 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -28,8 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -83,8 +74,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper,
-                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
+                        rowMapper);
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -97,7 +87,7 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_countExceedsPageSize_when_retrieve_then_pagesThroughQueryEndpoint() {
+    void given_serverCapsResponse_when_retrieve_then_advancesByReceivedRecords() {
         var countResponse = OBJECT_MAPPER.createObjectNode().put("count", 3);
         var firstPage = OBJECT_MAPPER.createObjectNode();
         firstPage.putArray("records").addObject();
@@ -131,8 +121,7 @@ class ResolutionCodeDataIngressProcessorTest {
 
         var received = processor.retrieve(ingressClient);
         assertThatThrownBy(() -> processor.preProcess(received))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("StartDate");
+                .isInstanceOf(CsdsPayloadValidationException.class);
         try (var files = Files.list(tempDir)) {
             var saved =
                     files.filter(path -> path.getFileName().toString().contains("_offset_0_"))
@@ -379,7 +368,8 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     @Test
-    void given_processedData_when_preProcess_then_preserveSourceIdsAndIncomingOrder() {
+    void
+            given_processedData_withoutBulkRespondentAllowed_when_preProcess_then_addRcIdAndPreserveIncomingOrder() {
         var preProcessed =
                 processor.preProcess(
                         List.of(
@@ -391,12 +381,15 @@ class ResolutionCodeDataIngressProcessorTest {
 
         assertThat(preProcessed).hasSize(1);
         assertThat(extractRecordsFromPage(preProcessed.getFirst()))
+                .extracting(item -> item.get("RC_ID").longValue())
+                .containsExactly(100003L, 100001L, 100002L);
+        assertThat(extractRecordsFromPage(preProcessed.getFirst()))
                 .extracting(item -> item.get("ResolutionCodeID").longValue())
                 .containsExactly(3L, 1L, 2L);
     }
 
     @Test
-    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_preserveSourceId() {
+    void given_unmappedCsdsMetadataAbsent_when_preProcess_then_addRcId() {
         var sourceRecord = createSourceRecord(3L, "RC3", "Title 3", "Wording 3", 1L);
         sourceRecord.remove(
                 List.of(
@@ -420,9 +413,9 @@ class ResolutionCodeDataIngressProcessorTest {
         assertThat(
                         extractRecordsFromPage(preProcessed.getFirst())
                                 .getFirst()
-                                .get("ResolutionCodeID")
+                                .get("RC_ID")
                                 .longValue())
-                .isEqualTo(3L);
+                .isEqualTo(ResolutionCodeIngressRecord.calculateId(null, 3L));
     }
 
     @Test
@@ -440,7 +433,8 @@ class ResolutionCodeDataIngressProcessorTest {
                         "email2@example.com",
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null,
-                        1L);
+                        1L,
+                        null);
         var existingUnmatched =
                 new ResolutionCodeIngressRecord(
                         4L,
@@ -452,7 +446,8 @@ class ResolutionCodeDataIngressProcessorTest {
                         null,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null,
-                        1L);
+                        1L,
+                        null);
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
                 .thenReturn(List.of(existingUpdated, existingUnmatched));
 
@@ -553,7 +548,8 @@ class ResolutionCodeDataIngressProcessorTest {
                         "email2@example.com",
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null,
-                        1L);
+                        1L,
+                        null);
         var existingUnmatched =
                 new ResolutionCodeIngressRecord(
                         4L,
@@ -565,7 +561,8 @@ class ResolutionCodeDataIngressProcessorTest {
                         null,
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null,
-                        1L);
+                        1L,
+                        null);
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
                 .thenReturn(List.of(existingUpdated, existingUnmatched));
 
@@ -595,7 +592,8 @@ class ResolutionCodeDataIngressProcessorTest {
                         "email2@example.com",
                         LocalDate.of(2020, Month.JANUARY, 1),
                         null,
-                        1L);
+                        1L,
+                        null);
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
                 .thenReturn(List.of(existingUpdated));
 
@@ -627,18 +625,14 @@ class ResolutionCodeDataIngressProcessorTest {
                         diffRecord -> {
                             assertThat(diffRecord.operation()).isEqualTo(IngressOperation.INSERT);
                             assertThat(diffRecord.existing()).isNull();
-                            assertThat(diffRecord.intended()).isEqualTo(diffRecord.incoming());
+                            assertThat(diffRecord.intended().csdsId()).isEqualTo(3L);
                             assertThat(diffRecord.intended().id())
                                     .isEqualTo(ResolutionCodeIngressRecord.calculateId(null, 3L));
                         });
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"Code", "IncomingCode"})
-    void given_pssResolutionCodeIdPresent_when_apply_then_useItAsTheResolvedKey(String codeField)
-            throws Exception {
-        properties.getProcessors().getResolutionCodes().setBusinessKeys(List.of(codeField));
-        when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.DEBUG);
+    @Test
+    void given_missingLegacyRow_when_apply_then_insertOffsetIdAndReportSource() throws Exception {
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
 
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffReportingService.class);
@@ -648,26 +642,8 @@ class ResolutionCodeDataIngressProcessorTest {
                 processor.preProcess(
                         List.of(
                                 createPageResponse(
-                                        createSourceRecordWithoutResolutionCodeId(
+                                        createLegacySourceRecord(
                                                 345L, "R3", "Title 3", "Wording 3", 1L)))));
-
-        verify(csdsAuditService)
-                .persistSuccessAudits(
-                        eq(CsdsAuditLevel.DEBUG),
-                        argThat(
-                                entries ->
-                                        entries.size() == 1
-                                                && entries.getFirst().appregKey().equals(345L)
-                                                && entries.getFirst()
-                                                        .csdsJson()
-                                                        .equals(
-                                                                createSourceRecordWithoutResolutionCodeId(
-                                                                                345L,
-                                                                                "R3",
-                                                                                "Title 3",
-                                                                                "Wording 3",
-                                                                                1L)
-                                                                        .toString())));
 
         assertThat(logCaptor.getInfoLogs())
                 .anyMatch(log -> log.contains("incoming=1, existing=0, inserts=1, updates=0"));
@@ -683,10 +659,9 @@ class ResolutionCodeDataIngressProcessorTest {
                             .toList();
             assertThat(reports).hasSize(2);
             for (var report : reports) {
-                if (report.getFileName().toString().contains("_incoming_")) {
-                    assertThat(Files.readString(report)).contains("\"345\",,,");
-                } else {
-                    assertThat(Files.readString(report)).contains("\"345\",,\"345\"");
+                assertThat(Files.readString(report)).contains("\"345\"");
+                if (report.getFileName().toString().startsWith("resolution_codes_diff_")) {
+                    assertThat(Files.readString(report)).contains("\"100345\"");
                 }
             }
         }
@@ -763,14 +738,8 @@ class ResolutionCodeDataIngressProcessorTest {
         verify(ingressClient).retrieveJson("/count/APPREGISTER/ResolutionCode/GD");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"Code", "IncomingCode"})
-    void given_duplicateCode_when_apply_then_throwException(String codeField) {
-        properties.getProcessors().getResolutionCodes().setBusinessKeys(List.of(codeField));
-        var missingField = createSourceRecord(101L, "R1", "Title", "Wording", 1L);
-        missingField.remove(codeField);
-        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(missingField))))
-                .hasMessageContaining(codeField);
+    @Test
+    void given_duplicateRemoteId_when_apply_then_throwException() {
         var logCaptor = LogCaptor.forClass(ResolutionCodeDiffService.class);
         logCaptor.clearLogs();
 
@@ -780,20 +749,17 @@ class ResolutionCodeDataIngressProcessorTest {
                                 createSourceRecordWithPssrcid(
                                         345L, 2L, "R2", "Title 2", "Wording 2", 2L),
                                 createSourceRecordWithPssrcid(
-                                        346L, 3L, "R2", "Title 3", "Wording 3", 1L)));
+                                        346L, 2L, "R3", "Title 3", "Wording 3", 1L)));
         var preProcessed = processor.preProcess(processedData);
 
         assertThatThrownBy(() -> processor.apply(preProcessed))
                 .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Duplicate incoming resolution_code R2")
-                .hasMessageContaining("Existing record [")
-                .hasMessageContaining("duplicate record [");
+                .hasMessageContaining("Duplicate incoming CSDS_ID 2");
         assertThat(logCaptor.getErrorLogs())
                 .anyMatch(
                         log ->
                                 log.contains(
-                                                "Duplicate incoming resolution_code R2"
-                                                        + " detected for resolution_codes_staging")
+                                                "Duplicate incoming CSDS_ID 2 detected for resolution_codes_staging")
                                         && log.contains("duplicate record"));
         verifyNoInteractions(tableReadService, bulkUpsertService);
     }
@@ -812,8 +778,7 @@ class ResolutionCodeDataIngressProcessorTest {
                         diffService,
                         diffReportingService,
                         bulkUpsertService,
-                        rowMapper,
-                        Clock.fixed(Instant.parse("2026-07-01T23:30:00Z"), ZoneOffset.UTC));
+                        rowMapper);
         when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
 
         processor.apply(
@@ -827,79 +792,176 @@ class ResolutionCodeDataIngressProcessorTest {
     }
 
     @Test
-    void futureRecordsAreWarnedAndDroppedBeforeDuplicatesOrIdResolution() {
-        var today = createSourceRecord(1L, "TODAY", "Title", "Wording", 1L);
-        today.put("StartDate", "2026-07-02");
-        var future =
-                today.deepCopy()
-                        .put("StartDate", "2026-07-03")
-                        .put("ResolutionCodeID", Long.MAX_VALUE);
-        var processed =
-                processor.preProcess(
-                        List.of(createPageResponse(today), createPageResponse(future)));
-        assertThat(extractRecordsFromPage(processed.getFirst())).containsExactly(today);
-        try (var logCaptor = LogCaptor.forClass(ResolutionCodeDataIngressProcessor.class)) {
-            processor.preProcess(List.of(createPageResponse(future)));
-            assertThat(logCaptor.getWarnLogs())
-                    .anyMatch(
-                            log ->
-                                    log.contains("TODAY")
-                                            && log.contains("2026-07-03")
-                                            && log.contains("2026-07-02"));
-        }
-        when(tableReadService.loadAll("resolution_codes_staging", rowMapper)).thenReturn(List.of());
-        processor.apply(processed);
-        verify(bulkUpsertService)
-                .upsertBatch(
-                        eq("resolution_codes_staging"),
-                        eq(List.of("resolution_code")),
-                        anyList(),
-                        eq(rowMapper),
-                        any());
+    void given_legacyThenModifiedVersion_when_diffAndReplay_then_preserveHistory() {
+        var legacy =
+                new ResolutionCodeIngressRecord(
+                        42L,
+                        "R1",
+                        "Legacy",
+                        "Wording",
+                        null,
+                        null,
+                        null,
+                        LocalDate.of(1900, 1, 1),
+                        null,
+                        1L,
+                        null);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(legacy));
+        var original = createSourceRecordWithPssrcid(42L, 100L, "R1", "Original", "Wording", 1L);
+        original.put("EndDate", "2020-01-02");
+        var first = processor.diff(processor.preProcess(List.of(createPageResponse(original))));
+        var enriched = first.diffRecords().getFirst().intended();
+        assertThat(first.diffRecords().getFirst().operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(enriched.id()).isEqualTo(42L);
+        assertThat(enriched.csdsId()).isEqualTo(100L);
+        assertThat(enriched.endDate()).isEqualTo(LocalDate.of(2020, 1, 2));
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(enriched));
+        var modified = createSourceRecordWithPssrcid(42L, 200L, "R1", "Modified", "Wording", 2L);
+        var pages = processor.preProcess(List.of(createPageResponse(modified)));
+        var diff = processor.diff(pages);
+        assertThat(diff.diffRecords().getFirst().operation()).isEqualTo(IngressOperation.INSERT);
+        var inserted = diff.diffRecords().getFirst().intended();
+        assertThat(inserted.id()).isEqualTo(100200L);
+        assertThat(inserted.csdsId()).isEqualTo(200L);
+        assertThat(processor.buildSuccessAudits(pages, diff).toString())
+                .contains("100200", "\"ResolutionCodeID\":200", "\"PSSResolutionCodeID\":42");
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(enriched, inserted));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
         assertThat(
-                        extractRecordsFromPage(
-                                processor
-                                        .preProcess(List.of(createPageResponse(future)))
-                                        .getFirst()))
+                        processor
+                                .diff(processor.preProcess(List.of(createPageResponse(original))))
+                                .diffRecords())
                 .isEmpty();
-        assertThat(processor.preProcess(List.of())).isEmpty();
     }
 
     @Test
-    void invalidDatesOnLaterPagesFailEvenWhenStartIsFuture() {
-        for (var start : List.of("", "invalid", "2026-02-30")) {
-            var invalid = createSourceRecord(2L, "BAD", "Title", "Wording", 1L);
-            invalid.put("StartDate", start);
-            assertThatThrownBy(
-                            () ->
-                                    processor.preProcess(
-                                            List.of(
-                                                    createPageResponse(
-                                                            createSourceRecord(
-                                                                    1L, "OK", "Title", "Wording",
-                                                                    1L)),
-                                                    createPageResponse(invalid))))
-                    .isInstanceOf(AppRegistryException.class);
+    void given_unlinkedOffsetIdWithoutPssId_when_diff_then_enrichAndSkipReplay() {
+        var original =
+                new ResolutionCodeIngressRecord(
+                        100100L,
+                        "R1",
+                        "Original",
+                        "Wording",
+                        null,
+                        null,
+                        null,
+                        LocalDate.of(1900, 1, 1),
+                        null,
+                        1L,
+                        null);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(original));
+        var pages =
+                processor.preProcess(
+                        List.of(
+                                createPageResponse(
+                                        createSourceRecord(100L, "R1", "Updated", "Wording", 2L))));
+
+        var diff = processor.diff(pages);
+
+        assertThat(diff.diffRecords()).hasSize(1);
+        var change = diff.diffRecords().getFirst();
+        assertThat(change.operation()).isEqualTo(IngressOperation.UPDATE);
+        assertThat(change.existing()).isEqualTo(original);
+        assertThat(change.intended().id()).isEqualTo(100100L);
+        assertThat(change.intended().csdsId()).isEqualTo(100L);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(change.intended()));
+        assertThat(processor.diff(pages).diffRecords()).isEmpty();
+    }
+
+    @Test
+    void given_duplicateBusinessCodeAcrossPages_when_ingest_then_rejectBeforeDatabaseRead() {
+        var pages =
+                List.<JsonNode>of(
+                        createPageResponse(createSourceRecord(100L, "R1", "First", "Wording", 1L)),
+                        createPageResponse(
+                                createSourceRecord(200L, "R1", "Second", "Wording", 2L)));
+        assertThatThrownBy(() -> processor.ingest(pages))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Duplicate incoming Code R1");
+        verifyNoInteractions(tableReadService, bulkUpsertService);
+    }
+
+    @Test
+    void given_generatedIdCollision_when_ingest_then_rejectBeforeWriting() {
+        var existing =
+                new ResolutionCodeIngressRecord(
+                        100100L,
+                        "OLD",
+                        "Legacy",
+                        "Wording",
+                        null,
+                        null,
+                        null,
+                        LocalDate.of(1900, 1, 1),
+                        null,
+                        1L,
+                        null);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(existing));
+        var pages =
+                List.<JsonNode>of(
+                        createPageResponse(createSourceRecord(100L, "R1", "Title", "Wording", 1L)));
+        assertThatThrownBy(() -> processor.ingest(pages))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Generated RC_ID 100100 collides");
+        verifyNoInteractions(bulkUpsertService);
+    }
+
+    @Test
+    void given_mismatchedLegacyCode_when_diff_then_insertSeparateVersion() {
+        var legacy =
+                new ResolutionCodeIngressRecord(
+                        42L,
+                        "OLD",
+                        "Legacy",
+                        "Wording",
+                        null,
+                        null,
+                        null,
+                        LocalDate.of(1900, 1, 1),
+                        null,
+                        1L,
+                        null);
+        when(tableReadService.loadAll("resolution_codes_staging", rowMapper))
+                .thenReturn(List.of(legacy));
+        var source = createSourceRecordWithPssrcid(42L, 100L, "NEW", "Title", "Wording", 1L);
+        var diff = processor.diff(processor.preProcess(List.of(createPageResponse(source))));
+        assertThat(diff.diffRecords().getFirst().operation()).isEqualTo(IngressOperation.INSERT);
+        assertThat(diff.diffRecords().getFirst().intended().id()).isEqualTo(100100L);
+        assertThat(diff.existingById().get(42L)).isEqualTo(legacy);
+    }
+
+    @Test
+    void given_invalidIdentifiers_when_preProcess_then_reject() throws Exception {
+        for (var field : List.of("ResolutionCodeID", "PSSResolutionCodeID")) {
+            for (var value : List.of("0", "-1", "1.5", "\"42\"", "9223372036854775808")) {
+                var source = createSourceRecord(100L, "R1", "Title", "Wording", 1L);
+                source.set(field, OBJECT_MAPPER.readTree(value));
+                assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(source))))
+                        .isInstanceOf(AppRegistryException.class)
+                        .hasMessageContaining(field);
+            }
         }
-        for (var end : List.of("", "invalid", "2026-02-30")) {
-            var future = createSourceRecord(2L, "BAD", "Title", "Wording", 1L);
-            future.put("StartDate", "2026-07-03").put("EndDate", end);
-            assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(future))))
-                    .isInstanceOf(AppRegistryException.class);
-        }
-        var missing = createSourceRecord(2L, "BAD", "Title", "Wording", 1L);
-        missing.remove("StartDate");
-        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(missing))))
-                .isInstanceOf(AppRegistryException.class);
-        missing.putNull("StartDate");
-        assertThatThrownBy(() -> processor.preProcess(List.of(createPageResponse(missing))))
-                .isInstanceOf(AppRegistryException.class);
+        var source = createSourceRecord(null, "R1", "Title", "Wording", 1L);
+        source.put("PSSResolutionCodeID", 42L);
+        assertThatThrownBy(() -> processor.ingest(List.of(createPageResponse(source))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("ResolutionCodeID");
+        source.put("ResolutionCodeID", (long) Integer.MAX_VALUE + 1);
+        assertThatThrownBy(() -> processor.ingest(List.of(createPageResponse(source))))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("ResolutionCodeID");
         verifyNoInteractions(bulkUpsertService);
     }
 
     private ResolutionCodeIngressRecord toIngressRecord(JsonNode node) {
         return new ResolutionCodeIngressRecord(
-                nullableLong(node, "ResolutionCodeID"),
+                nullableLong(node, "PSSResolutionCodeID"),
                 nullableText(node, "Code"),
                 nullableText(node, "ResultTitle"),
                 nullableText(node, "ResultWording"),
@@ -909,7 +971,7 @@ class ResolutionCodeDataIngressProcessorTest {
                 nullableLocalDate(node, "StartDate"),
                 nullableLocalDate(node, "EndDate"),
                 nullableLong(node, "RevisionNumber"),
-                nullableLong(node, "PSSResolutionCodeID"));
+                nullableLong(node, "ResolutionCodeID"));
     }
 
     private ObjectNode createPageResponse(ObjectNode... records) {
@@ -937,13 +999,7 @@ class ResolutionCodeDataIngressProcessorTest {
         var sourceRecord =
                 OBJECT_MAPPER
                         .createObjectNode()
-                        .put(
-                                properties
-                                        .getProcessors()
-                                        .getResolutionCodes()
-                                        .getBusinessKeys()
-                                        .getFirst(),
-                                code)
+                        .put("Code", code)
                         .put("ResultTitle", title)
                         .put("ResultWording", wording)
                         .putNull("Legislation")
@@ -978,10 +1034,11 @@ class ResolutionCodeDataIngressProcessorTest {
         return sourceRecord;
     }
 
-    private ObjectNode createSourceRecordWithoutResolutionCodeId(
+    private ObjectNode createLegacySourceRecord(
             Long pssResolutionCodeId, String code, String title, String wording, Long version) {
         var sourceRecord =
-                createSourceRecord(null, code, title, wording, version, "2020-01-01", null);
+                createSourceRecord(
+                        pssResolutionCodeId, code, title, wording, version, "2020-01-01", null);
         sourceRecord.put("PSSResolutionCodeID", pssResolutionCodeId);
         return sourceRecord;
     }

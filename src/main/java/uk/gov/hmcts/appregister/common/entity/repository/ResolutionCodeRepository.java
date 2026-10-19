@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,92 +10,42 @@ import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 
 /**
- * Spring Data JPA repository for {@link ResolutionCode} entities.
- *
- * <p>Provides access to Resolution Codes stored in the {@code result_codes} table. Includes custom
- * queries for retrieving active result codes by code/date and paginated searches with optional
- * filters.
+ * Date-valid resolution-code versions, selected consistently for lookups and searches.
  */
 public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, Long> {
-    /** Exact business-key lookup, including inactive records. */
-    Optional<ResolutionCode> findByResultCode(String resultCode);
-
-    /**
-     * Find active Resolution Codes by code on a given date.
-     *
-     * <p>Active if: {@code rc.startDate <= :date} and ({@code rc.endDate IS NULL} or {@code
-     * rc.endDate >= :date}). Code match is case-insensitive equality on {@code rc.resultCode}.
-     *
-     * @param code case-insensitive business code (e.g. "ABC123")
-     * @param date local date to check for active codes
-     * @return matching active rows in deterministic selection order
-     */
+    /** Returns the highest-ID version valid on the supplied date, or empty. */
     @Query(
             """
         SELECT rc
         FROM ResolutionCode rc
         WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
-        AND rc.startDate <= :date
-        AND (rc.endDate IS NULL OR rc.endDate >= :date)
-        ORDER BY CASE WHEN rc.endDate IS NULL THEN 0 ELSE 1 END,
-                 rc.endDate DESC,
-                 rc.startDate DESC,
-                 rc.id DESC
+        AND rc.id = (
+            SELECT MAX(v.id) FROM ResolutionCode v
+            WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
+              AND v.startDate <= :date
+              AND (v.endDate IS NULL OR v.endDate >= :date)
+        )
         """)
-    List<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
+    Optional<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
-    /**
-     * Retrieve a page of active Resolution Codes filtered by code/title (case-insensitive).
-     *
-     * <p>Active if: rc.startDate <= :asOfDate AND (rc.endDate IS NULL OR rc.endDate >= :asOfDate)
-     *
-     * @param code optional partial code filter (case-insensitive)
-     * @param title optional partial title filter (case-insensitive)
-     * @param date date to evaluate "active" on
-     * @param pageable paging/sorting
-     * @return page of matching entities
-     */
+    /** Filters and paginates the highest-ID date-valid version of each business code. */
     @Query(
             """
         SELECT rc
         FROM ResolutionCode rc
-        WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER( CAST(:code as string)), '%'))
-        AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER( CAST(:title as string)), '%'))
-        AND rc.startDate <= :date
-        AND (rc.endDate IS NULL OR rc.endDate >= :date)
+        WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%'))
+        AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER(CAST(:title AS string)), '%'))
+        AND rc.id = (
+            SELECT MAX(v.id) FROM ResolutionCode v
+            WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
+              AND v.startDate <= :date
+              AND (v.endDate IS NULL OR v.endDate >= :date)
+        )
         """)
     Page<ResolutionCode> findActiveOnDate(
             @Param("code") String code,
             @Param("title") String title,
-            @Param("date") LocalDate date,
-            Pageable pageable);
-
-    /**
-     * Finds active {@link ResolutionCode} records for the given result code (case-insensitive).
-     *
-     * <p>An active resolution code is defined as:
-     *
-     * <ul>
-     *   <li>{@code startDate <= :date}
-     *   <li>{@code endDate IS NULL OR endDate >= :date}
-     * </ul>
-     *
-     * @param resultCode the result code to match (case-insensitive)
-     * @param date active date to evaluate against
-     * @param pageable paging/sorting
-     * @return a list of active resolution codes matching the given result code
-     */
-    @Query(
-            """
-        select rc
-        from ResolutionCode rc
-        where lower(rc.resultCode) = lower(:resultCode)
-        and rc.startDate <= :date
-        and (rc.endDate is null or rc.endDate >= :date)
-        """)
-    List<ResolutionCode> findActiveByResultCodeIgnoreCase(
-            @Param("resultCode") String resultCode,
             @Param("date") LocalDate date,
             Pageable pageable);
 }

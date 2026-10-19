@@ -238,16 +238,20 @@ public class StandardApplicantControllerExportTest
     void searchPrintAndExportReturnSameActiveMatchesAcrossPages(String field, String direction)
             throws Exception {
         final var first = insertStandardApplicant();
-        var second = insertStandardApplicant("TEST002");
+        var second = insertStandardApplicant();
+        second.setApplicantCode("TEST002");
         second.setName("Another Test Organisation");
         repository.saveAndFlush(second);
-        var expired = insertStandardApplicant("TEST003");
+        var expired = insertStandardApplicant();
+        expired.setApplicantCode("TEST003");
         expired.setApplicantEndDate(LocalDate.now().minusDays(1));
         repository.saveAndFlush(expired);
-        var future = insertStandardApplicant("TEST004");
+        var future = insertStandardApplicant();
+        future.setApplicantCode("TEST004");
         future.setApplicantStartDate(LocalDate.now().plusDays(1));
         repository.saveAndFlush(future);
-        var nonMatching = insertStandardApplicant("TEST005");
+        var nonMatching = insertStandardApplicant();
+        nonMatching.setApplicantCode("TEST005");
         nonMatching.setName("Unrelated");
         nonMatching.setApplicantForename1("Unrelated");
         repository.saveAndFlush(nonMatching);
@@ -310,8 +314,12 @@ public class StandardApplicantControllerExportTest
     @Test
     void printRejectsResultsAboveConfiguredLimit() throws Exception {
         insertStandardApplicant();
-        insertStandardApplicant("TEST002");
-        insertStandardApplicant("TEST003");
+        var second = insertStandardApplicant();
+        second.setApplicantCode("TEST002");
+        repository.saveAndFlush(second);
+        var third = insertStandardApplicant();
+        third.setApplicantCode("TEST003");
+        repository.saveAndFlush(third);
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -321,7 +329,7 @@ public class StandardApplicantControllerExportTest
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/reports/print"),
                         token,
-                        rs -> rs.queryParam("code", "TEST"));
+                        rs -> rs.queryParam("code", "TEST00"));
         response.then().statusCode(400);
         assertThat(response.as(ProblemDetail.class).getDetail())
                 .isEqualTo("Standard Applicant print result limit exceeded");
@@ -367,12 +375,8 @@ public class StandardApplicantControllerExportTest
     }
 
     private StandardApplicant insertStandardApplicant() {
-        return insertStandardApplicant("TEST001");
-    }
-
-    private StandardApplicant insertStandardApplicant(String code) {
         StandardApplicant sa = new StandardApplicantTestData().someComplete();
-        sa.setApplicantCode(code);
+        sa.setApplicantCode("TEST001");
         sa.setApplicantTitle("Mr");
         sa.setName("Test Organisation");
         sa.setApplicantForename1("John");

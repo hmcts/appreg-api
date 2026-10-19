@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -30,23 +29,22 @@ public class StandardApplicantIngressApplyService {
 
     @Transactional
     public void reconcileAndUpsert(
-            String targetTable, List<String> targetKeyFields, StandardApplicantDiffResult diff) {
+            String targetTable, String targetKeyField, StandardApplicantDiffResult diff) {
         val validatedTableName = CsdsSqlIdentifierValidator.requireValid(targetTable, "tableName");
-        // Reconciliation compares numeric IDs, independently of the configured conflict key.
-        endDateMissingApplicants(validatedTableName, "sa_id", diff.incomingById());
+        val validatedPrimaryKey =
+                CsdsSqlIdentifierValidator.requireValid(targetKeyField, "primaryKey");
+        endDateMissingApplicants(validatedTableName, diff.incomingById());
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 validatedTableName,
-                targetKeyFields,
+                validatedPrimaryKey,
                 rows,
                 rowMapper,
                 StandardApplicantIngressRecord::id);
     }
 
     private void endDateMissingApplicants(
-            String targetTable,
-            String targetKeyField,
-            Map<Long, StandardApplicantIngressRecord> incomingById) {
+            String targetTable, Map<Long, StandardApplicantIngressRecord> incomingById) {
         val validatedSchema = CsdsSqlIdentifierValidator.requireValid(schema, "schema");
         var sql =
                 """
@@ -63,9 +61,14 @@ public class StandardApplicantIngressApplyService {
         var parameters = new HashMap<String, Object>();
         parameters.put("today", businessDateProvider.currentUkDate());
         if (!incomingById.isEmpty()) {
-            // targetKeyField is a regex-validated SQL identifier.
-            sql += " AND " + targetKeyField + " NOT IN (:incomingIds)"; // NOSONAR
-            parameters.put("incomingIds", incomingById.keySet());
+            // A new version must not end-date older versions of a code still in the feed.
+            sql += " AND standard_applicant_code NOT IN (:incomingCodes)";
+            parameters.put(
+                    "incomingCodes",
+                    incomingById.values().stream()
+                            .map(StandardApplicantIngressRecord::code)
+                            .distinct()
+                            .toList());
         }
         jdbcTemplate.update(sql, parameters);
     }

@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.applicationcode;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,27 +17,38 @@ import uk.gov.hmcts.appregister.csds.ingress.database.JdbcIngressTableReadServic
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffService;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressOperation;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ApplicationCodeDiffService
         implements IngressDiffService<ApplicationCodeDiffRequest, ApplicationCodeDiffResult> {
-    private static final String INSERT_REASON_NO_EXISTING_MATCH =
-            "no existing application_code match";
-    private static final String UPDATE_REASON_EXISTING_MATCH = "existing application_code match";
+    private static final String INSERT_REASON_NO_EXISTING_MATCH = "new CSDS version";
+    private static final String UPDATE_REASON_EXISTING_MATCH =
+            "first CSDS receipt of legacy record";
 
     private final JdbcIngressTableReadService tableReadService;
     private final ApplicationCodeIngressDatabaseRowMapper rowMapper;
 
     @Override
     public ApplicationCodeDiffResult diff(ApplicationCodeDiffRequest request) {
-        val incomingByCode = new LinkedHashMap<String, ApplicationCodeIngressRecord>();
+        val incomingById = new LinkedHashMap<Long, ApplicationCodeIngressRecord>();
+        val incomingCodes = new HashSet<String>();
         request.processedData().stream()
                 .flatMap(page -> request.recordsExtractor().apply(page).stream())
                 .map(request.recordMapper())
-                .forEach(item -> addIncomingRecord(request.targetTable(), incomingByCode, item));
+                .forEach(
+                        item -> {
+                            if (!incomingCodes.add(item.code())) {
+                                throw new AppRegistryException(
+                                        CommonAppError.INTERNAL_SERVER_ERROR,
+                                        "Duplicate incoming Code "
+                                                + item.code()
+                                                + " detected for "
+                                                + request.targetTable());
+                            }
+                            addIncomingRecord(request.targetTable(), incomingById, item);
+                        });
 
         log.info("Loading existing CSDS comparison rows from {}", request.targetTable());
         val existingById =
@@ -53,43 +66,48 @@ public class ApplicationCodeDiffService
                                 ApplicationCodeIngressRecord,
                                 ApplicationCodeIngressRecord,
                                 ApplicationCodeIngressRecord>>();
-        val existingByCode =
-                existingById.values().stream()
-                        .collect(
-                                Collectors.toMap(ApplicationCodeIngressRecord::code, item -> item));
-        val incomingById = new LinkedHashMap<Long, ApplicationCodeIngressRecord>();
-        for (val incoming : incomingByCode.values()) {
-            val existing = existingByCode.get(incoming.code());
-            if (existing == null && incoming.id() == null) {
+        val occupiedIds = new HashSet<>(existingById.keySet());
+        val receivedVersions = new HashSet<Map.Entry<Long, String>>();
+        existingById.values().stream()
+                .filter(item -> item.csdsId() != null)
+                .forEach(item -> receivedVersions.add(Map.entry(item.csdsId(), item.code())));
+        for (val incoming : incomingById.values()) {
+            if (receivedVersions.contains(Map.entry(incoming.csdsId(), incoming.code()))) {
+                continue;
+            }
+            // Earlier imports also allocated offset IDs without recording the CSDS identity.
+            val existing =
+                    existingById.get(
+                            incoming.id() != null
+                                    ? incoming.id()
+                                    : ApplicationCodeIngressRecord.calculateId(
+                                            null, incoming.csdsId()));
+            val legacyMatch =
+                    existing != null
+                            && existing.csdsId() == null
+                            && existing.code().equals(incoming.code());
+            val intended =
+                    incoming.withId(
+                            legacyMatch
+                                    ? existing.id()
+                                    : ApplicationCodeIngressRecord.calculateId(
+                                            null, incoming.csdsId()));
+            if (!legacyMatch && !occupiedIds.add(intended.id())) {
                 throw new AppRegistryException(
                         CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Missing ApplicationCodeID for new application code " + incoming.code());
+                        "Generated AC_ID "
+                                + intended.id()
+                                + " collides with an existing or planned record");
             }
-            val intendedId =
-                    existing == null
-                            ? ApplicationCodeIngressRecord.calculateId(
-                                    incoming.pssId(), incoming.id())
-                            : existing.id();
-            if (intendedId == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Missing source ID for new application code " + incoming.code());
-            }
-            val intended = incoming.withId(intendedId);
-            val idOwner = existingById.get(intendedId);
-            val incomingOwner = incomingById.putIfAbsent(intendedId, intended);
-            if ((idOwner != null && !idOwner.code().equals(incoming.code()))
-                    || incomingOwner != null) {
-                val message =
-                        "Legacy AC_ID %s conflicts for incoming application code [%s] with owner [%s]"
-                                .formatted(
-                                        intendedId,
-                                        describe(intended),
-                                        describe(incomingOwner != null ? incomingOwner : idOwner));
-                log.error(message);
-                throw new CsdsDuplicateRecordException(message);
-            }
-            diffRecords.add(determineDiffRecord(existing, intended));
+            diffRecords.add(
+                    new IngressDiffRecord<>(
+                            legacyMatch ? IngressOperation.UPDATE : IngressOperation.INSERT,
+                            incoming,
+                            legacyMatch ? existing : null,
+                            intended,
+                            legacyMatch
+                                    ? UPDATE_REASON_EXISTING_MATCH
+                                    : INSERT_REASON_NO_EXISTING_MATCH));
         }
 
         return new ApplicationCodeDiffResult(incomingById, existingById, List.copyOf(diffRecords));
@@ -97,49 +115,22 @@ public class ApplicationCodeDiffService
 
     private void addIncomingRecord(
             String targetTable,
-            LinkedHashMap<String, ApplicationCodeIngressRecord> incomingByCode,
+            LinkedHashMap<Long, ApplicationCodeIngressRecord> incomingById,
             ApplicationCodeIngressRecord item) {
-        val existing = incomingByCode.putIfAbsent(item.code(), item);
+        val existing = incomingById.putIfAbsent(item.csdsId(), item);
         if (existing == null) {
             return;
         }
 
-        val message =
-                ("Duplicate incoming application_code %s detected for %s. Existing record [%s], "
-                                + "duplicate record [%s]")
-                        .formatted(item.code(), targetTable, describe(existing), describe(item));
-        log.error(message);
-        throw new CsdsDuplicateRecordException(message);
-    }
-
-    private IngressDiffRecord<
-                    ApplicationCodeIngressRecord,
-                    ApplicationCodeIngressRecord,
-                    ApplicationCodeIngressRecord>
-            determineDiffRecord(
-                    ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
-        if (existing == null) {
-            return new IngressDiffRecord<>(
-                    IngressOperation.INSERT,
-                    incoming,
-                    null,
-                    buildIntendedRecord(null, incoming),
-                    INSERT_REASON_NO_EXISTING_MATCH);
-        }
-
-        return new IngressDiffRecord<>(
-                IngressOperation.UPDATE,
-                incoming,
-                existing,
-                buildIntendedRecord(existing, incoming),
-                UPDATE_REASON_EXISTING_MATCH);
-    }
-
-    @SuppressWarnings("java:S1172")
-    private ApplicationCodeIngressRecord buildIntendedRecord(
-            ApplicationCodeIngressRecord existing, ApplicationCodeIngressRecord incoming) {
-        // ApplicationCode currently upserts directly from the incoming CSDS representation.
-        return incoming;
+        log.error(
+                "Duplicate incoming CSDS_ID {} detected for {}. Existing record [{}], duplicate record [{}]",
+                item.csdsId(),
+                targetTable,
+                describe(existing),
+                describe(item));
+        throw new AppRegistryException(
+                CommonAppError.INTERNAL_SERVER_ERROR,
+                "Duplicate incoming CSDS_ID " + item.csdsId() + " detected for " + targetTable);
     }
 
     private String describe(ApplicationCodeIngressRecord item) {

@@ -13,7 +13,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.csds.ingress.database.CsdsBatchUpsertException;
-import uk.gov.hmcts.appregister.csds.ingress.exception.CsdsDuplicateRecordException;
 
 /**
  * An aspect that stores the operation name in the MDC for logging purposes. The class logs the
@@ -86,12 +85,7 @@ public class AbstractOperationDurationAspect {
 
     private boolean isExpectedAppRegistryException(Throwable throwable) {
         return throwable instanceof AppRegistryException appRegistryException
-                && (appRegistryException instanceof CsdsDuplicateRecordException
-                        || appRegistryException
-                                .getCode()
-                                .getCode()
-                                .getHttpCode()
-                                .is4xxClientError());
+                && appRegistryException.getCode().getCode().getHttpCode().is4xxClientError();
     }
 
     /** A consumer that takes three arguments. */

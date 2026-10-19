@@ -14,7 +14,10 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 @Service
 public class StandardApplicantDiffReportingService
         extends AbstractIngressDiffReportingService<StandardApplicantIngressRecord> {
+    private static final String APPLICANT_ID = "ApplicantID";
+    private static final String PSS_APPLICANT_ID = "PSSApplicantID";
     private static final String SA_ID = "SA_ID";
+    private static final String CODE = "Code";
     private static final String NAME = "OrganisationName";
     private static final String START_DATE = "StartDate";
     private static final String END_DATE = "EndDate";
@@ -22,10 +25,10 @@ public class StandardApplicantDiffReportingService
     private static final String CSV_HEADER =
             "psssaId,applicantId,saId,code,name,startDate,endDate,version\n";
     private static final String DIFF_REPORT_HEADER = "psssaId,applicantId,saId,changeType\n";
-    private final CsdsIngressProperties.StandardApplicants processorProperties;
+    private final String reportingDir;
 
     public StandardApplicantDiffReportingService(CsdsIngressProperties properties) {
-        processorProperties = properties.getProcessors().getStandardApplicants();
+        reportingDir = properties.getProcessors().getStandardApplicants().getReportingDir();
     }
 
     public void reportDiff(
@@ -36,7 +39,7 @@ public class StandardApplicantDiffReportingService
             StandardApplicantDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         super.reportDiff(
-                processorProperties.getReportingDir(),
+                reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
@@ -62,26 +65,22 @@ public class StandardApplicantDiffReportingService
                                     StandardApplicantIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByCode =
+        var incomingRecordsByCsdsId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .filter(item -> nullableLong(item, APPLICANT_ID) != null)
                         .collect(
                                 Collectors.toMap(
-                                        item ->
-                                                nullableText(
-                                                        item,
-                                                        processorProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
+                                        item -> nullableLong(item, APPLICANT_ID),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
                 .<DiffReportCsvRow>map(
                         item -> {
-                            var source = incomingRecordsByCode.get(item.intended().code());
+                            var source = incomingRecordsByCsdsId.get(item.incoming().csdsId());
                             return new DiffReportRow(
-                                    nullableLong(source, processorProperties.getLegacyKey()),
-                                    nullableLong(source, processorProperties.getCsdsKey()),
+                                    nullableLong(source, PSS_APPLICANT_ID),
+                                    nullableLong(source, APPLICANT_ID),
                                     item.intended().id(),
                                     changeType(item.operation()));
                         })
@@ -115,12 +114,10 @@ public class StandardApplicantDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
-                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
+                        csvValue(nullableLong(node, PSS_APPLICANT_ID)),
+                        csvValue(nullableLong(node, APPLICANT_ID)),
                         csvValue(nullableLong(node, SA_ID)),
-                        csvValue(
-                                nullableText(
-                                        node, processorProperties.getBusinessKeys().getFirst())),
+                        csvValue(nullableText(node, CODE)),
                         csvValue(nullableText(node, NAME)),
                         csvValue(nullableText(node, START_DATE)),
                         csvValue(nullableText(node, END_DATE)),
@@ -132,7 +129,7 @@ public class StandardApplicantDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.code()),
                         csvValue(item.name()),

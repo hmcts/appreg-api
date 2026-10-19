@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -12,9 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
@@ -28,27 +26,6 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         return LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
     }
 
-    @Test
-    @Transactional
-    void exactBusinessKeyLookupIncludesExpiredRowsAndRejectsPartialOrDifferentCaseMatches() {
-        var expired = new ResolutionCode();
-        expired.setId(9009919L);
-        expired.setResultCode("KEYRC01");
-        expired.setTitle("Expired lookup fixture");
-        expired.setWording("Expired wording");
-        expired.setStartDate(LocalDate.of(1900, 1, 1));
-        expired.setEndDate(LocalDate.of(1901, 1, 1));
-        expired.setChangedBy(1L);
-        expired.setChangedDate(OffsetDateTime.now(clock));
-        repository.saveAndFlush(expired);
-
-        assertThat(repository.findByResultCode("KEYRC01"))
-                .hasValueSatisfying(row -> assertThat(row.getId()).isEqualTo(expired.getId()));
-        assertThat(repository.findByResultCode("keyrc01")).isEmpty();
-        assertThat(repository.findByResultCode("KEYRC")).isEmpty();
-        assertThat(repository.findByResultCode("UNKNOWN")).isEmpty();
-    }
-
     @Nested
     @DisplayName("findActiveResolutionCodesOnDateByCode")
     class FindByCodeOnDate {
@@ -56,9 +33,10 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active on date (case-insensitive code)")
         void returnsAppc() {
-            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", today()))
-                    .singleElement()
-                    .satisfies(
+            var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
+
+            assertThat(result)
+                    .hasValueSatisfying(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
@@ -88,7 +66,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getResultCode)
-                    .containsExactlyInAnyOrder("APPC", "APPABANDON");
+                    .containsExactly("APPC", "APPABANDON");
         }
 
         @Test
@@ -138,17 +116,14 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Nested
-    @DisplayName("findActiveByResultCodeIgnoreCasePreferNullEndDate")
-    class FindActiveByResultCodePreferNullEndDate {
+    @DisplayName("latest date-valid version")
+    class LatestDateValidVersion {
 
         @Test
-        @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
-        void returnsSeededAppc_prefersNullEndDate() {
+        void returnsSeededAppc() {
             var result = repository.findActiveResolutionCodesByCodeAndDate("appc", today());
-
             assertThat(result)
-                    .singleElement()
-                    .satisfies(
+                    .hasValueSatisfying(
                             rc -> {
                                 assertThat(rc.getResultCode()).isEqualTo("APPC");
                                 assertThat(rc.getTitle()).isEqualTo("Appeal to Crown Court");
@@ -157,22 +132,65 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("rejects another record with the same business code")
-        void rejectsDuplicateBusinessCode() {
+        void selectsHighestDateValidIdBeforeTitleFilteringAndPagination() {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
-            additionalActiveWithEndDate.setId(Math.abs(UUID.randomUUID().getMostSignificantBits()));
+            additionalActiveWithEndDate.setId(900000000L);
             additionalActiveWithEndDate.setResultCode("APPC");
-            additionalActiveWithEndDate.setTitle("Some other APPC title (should not win)");
+            additionalActiveWithEndDate.setTitle("Latest bounded APPC");
             additionalActiveWithEndDate.setWording("Dummy wording");
             additionalActiveWithEndDate.setStartDate(t.minusDays(10));
-            additionalActiveWithEndDate.setEndDate(t.plusDays(10));
+            additionalActiveWithEndDate.setEndDate(t);
             additionalActiveWithEndDate.setChangedBy(1L);
             additionalActiveWithEndDate.setChangedDate(OffsetDateTime.now(clock));
 
-            assertThatThrownBy(() -> repository.saveAndFlush(additionalActiveWithEndDate))
-                    .isInstanceOf(DataIntegrityViolationException.class);
+            final var savedWithEndDate = repository.saveAndFlush(additionalActiveWithEndDate);
+
+            var future = new ResolutionCode();
+            future.setId(900000001L);
+            future.setResultCode("APPC");
+            future.setTitle("Future");
+            future.setWording("Future wording");
+            future.setStartDate(t.plusDays(1));
+            future.setChangedBy(1L);
+            future.setChangedDate(OffsetDateTime.now(clock));
+            repository.saveAndFlush(future);
+            var expired = new ResolutionCode();
+            expired.setId(900000002L);
+            expired.setResultCode("APPC");
+            expired.setTitle("Expired");
+            expired.setWording("Expired wording");
+            expired.setStartDate(t.minusDays(10));
+            expired.setEndDate(t.minusDays(1));
+            expired.setChangedBy(1L);
+            expired.setChangedDate(OffsetDateTime.now(clock));
+            repository.saveAndFlush(expired);
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t))
+                    .map(ResolutionCode::getId)
+                    .contains(savedWithEndDate.getId());
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.minusDays(10)))
+                    .map(ResolutionCode::getId)
+                    .contains(expired.getId());
+            var page = repository.findActiveOnDate("APPC", null, t, PageRequest.of(0, 1));
+            assertThat(page.getContent())
+                    .extracting(ResolutionCode::getId)
+                    .containsExactly(savedWithEndDate.getId());
+            assertThat(page.getTotalElements()).isEqualTo(1);
+            assertThat(
+                            repository.findActiveOnDate(
+                                    "APPC", "Appeal to Crown Court", t, PageRequest.of(0, 10)))
+                    .isEmpty();
+            var first =
+                    repository.findActiveOnDate(
+                            "AP", null, t, PageRequest.of(0, 1, Sort.by("resultCode")));
+            var second =
+                    repository.findActiveOnDate(
+                            "AP", null, t, PageRequest.of(1, 1, Sort.by("resultCode")));
+            assertThat(first.getTotalElements()).isEqualTo(2);
+            assertThat(second.getTotalElements()).isEqualTo(2);
+            assertThat(first.getContent().getFirst().getResultCode())
+                    .isNotEqualTo(second.getContent().getFirst().getResultCode());
         }
 
         @Test

@@ -1,11 +1,14 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -55,6 +58,40 @@ class ApplicationEntryResultUpdateValidatorTest {
     private ResultUpdateDto dto;
     private PayloadForUpdateEntryResult payload;
 
+    @Test
+    void unchangedCodeRetainsStoredHistoricalVersion() {
+        var historical = new ResolutionCode();
+        historical.setId(42L);
+        historical.setResultCode("res_code");
+        historical.setEndDate(TODAY_UK.minusDays(1));
+        var existing = new AppListEntryResolution();
+        existing.setResolutionCode(historical);
+        when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                        resultUuid, applicationListEntryUuid))
+                .thenReturn(Optional.of(existing));
+        assertThat(validator.resolveResolutionCode(payload)).isSameAs(historical);
+        verify(resolutionCodeRepository, never())
+                .findActiveResolutionCodesByCodeAndDate(any(), any());
+    }
+
+    @Test
+    void replacementCodeUsesDateValidLookup() {
+        var historical = new ResolutionCode();
+        historical.setResultCode("OTHER");
+        var existing = new AppListEntryResolution();
+        existing.setResolutionCode(historical);
+        when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                        resultUuid, applicationListEntryUuid))
+                .thenReturn(Optional.of(existing));
+        var replacement = new ResolutionCode();
+        when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
+                        dto.getResultCode(), TODAY_UK))
+                .thenReturn(Optional.of(replacement));
+        assertThat(validator.resolveResolutionCode(payload)).isSameAs(replacement);
+        verify(resolutionCodeRepository)
+                .findActiveResolutionCodesByCodeAndDate(dto.getResultCode(), TODAY_UK);
+    }
+
     @BeforeEach
     void setUp() {
         applicationListUuid = UUID.randomUUID();
@@ -90,7 +127,7 @@ class ApplicationEntryResultUpdateValidatorTest {
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(List.of(resolutionCode));
+                .thenReturn(Optional.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
         AppListEntryResolution entryResolution = new AppListEntryResolution();
@@ -191,7 +228,7 @@ class ApplicationEntryResultUpdateValidatorTest {
     void validateResolutionCodeDoesNotExist() {
         when(resolutionCodeRepository.findActiveResolutionCodesByCodeAndDate(
                         dto.getResultCode(), TODAY_UK))
-                .thenReturn(List.of());
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(

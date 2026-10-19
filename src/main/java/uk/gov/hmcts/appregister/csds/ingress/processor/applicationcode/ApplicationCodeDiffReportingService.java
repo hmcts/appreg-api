@@ -15,10 +15,10 @@ import uk.gov.hmcts.appregister.csds.ingress.processor.AbstractIngressDiffReport
 public class ApplicationCodeDiffReportingService
         extends AbstractIngressDiffReportingService<ApplicationCodeIngressRecord> {
     private static final String AC_ID = "AC_ID";
-    private final CsdsIngressProperties.ApplicationCodes processorProperties;
+    private final String reportingDir;
 
     public ApplicationCodeDiffReportingService(CsdsIngressProperties properties) {
-        this.processorProperties = properties.getProcessors().getApplicationCodes();
+        this.reportingDir = properties.getProcessors().getApplicationCodes().getReportingDir();
     }
 
     public void reportDiff(
@@ -29,7 +29,7 @@ public class ApplicationCodeDiffReportingService
             ApplicationCodeDiffResult diffResult,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
         super.reportDiff(
-                processorProperties.getReportingDir(),
+                reportingDir,
                 datasetName,
                 targetTable,
                 targetKeyField,
@@ -55,17 +55,13 @@ public class ApplicationCodeDiffReportingService
                                     ApplicationCodeIngressRecord>>
                     diffRecords,
             Function<JsonNode, List<JsonNode>> recordsExtractor) {
-        var incomingRecordsByCode =
+        var incomingRecordsByAcId =
                 processedData.stream()
                         .flatMap(page -> recordsExtractor.apply(page).stream())
+                        .filter(item -> nullableLong(item, "ApplicationCodeID") != null)
                         .collect(
                                 Collectors.toMap(
-                                        item ->
-                                                nullableText(
-                                                        item,
-                                                        processorProperties
-                                                                .getBusinessKeys()
-                                                                .getFirst()),
+                                        item -> nullableLong(item, "ApplicationCodeID"),
                                         Function.identity(),
                                         (first, second) -> second));
         return diffRecords.stream()
@@ -73,11 +69,11 @@ public class ApplicationCodeDiffReportingService
                         item ->
                                 new DiffReportRow(
                                         nullableLong(
-                                                incomingRecordsByCode.get(item.intended().code()),
-                                                processorProperties.getLegacyKey()),
+                                                incomingRecordsByAcId.get(item.incoming().csdsId()),
+                                                "PSSApplicationCodeID"),
                                         nullableLong(
-                                                incomingRecordsByCode.get(item.intended().code()),
-                                                processorProperties.getCsdsKey()),
+                                                incomingRecordsByAcId.get(item.incoming().csdsId()),
+                                                "ApplicationCodeID"),
                                         item.intended().id(),
                                         changeType(item.operation())))
                 .toList();
@@ -118,12 +114,10 @@ public class ApplicationCodeDiffReportingService
     private String toIncomingCsvRow(JsonNode node) {
         return String.join(
                         ",",
-                        csvValue(nullableLong(node, processorProperties.getLegacyKey())),
-                        csvValue(nullableLong(node, processorProperties.getCsdsKey())),
+                        csvValue(nullableLong(node, "PSSApplicationCodeID")),
+                        csvValue(nullableLong(node, "ApplicationCodeID")),
                         csvValue(nullableLong(node, AC_ID)),
-                        csvValue(
-                                nullableText(
-                                        node, processorProperties.getBusinessKeys().getFirst())),
+                        csvValue(nullableText(node, "Code")),
                         csvValue(nullableText(node, "ApplicationTitle")),
                         csvValue(nullableText(node, "ApplicationWording")),
                         csvValue(nullableText(node, "Legislation")),
@@ -141,7 +135,7 @@ public class ApplicationCodeDiffReportingService
         return String.join(
                         ",",
                         csvValue((Object) null),
-                        csvValue((Object) null),
+                        csvValue(item.csdsId()),
                         csvValue(item.id()),
                         csvValue(item.code()),
                         csvValue(item.title()),

@@ -260,15 +260,18 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: links the active code with a null end date")
-    void givenActiveResolutionCode_whenCreate_thenPreservesNumericReference() throws Exception {
+    @DisplayName(
+            "Create Application List Entry Result: chooses the highest active ResolutionCode ID")
+    void givenMultipleActiveResolutionCodes_whenCreate_thenChoosesHighestId() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
 
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
 
-        saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        final var openEnded = saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        final var bounded =
+                saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
 
         var token = getToken();
         var payload = buildCreatePayload("DUP1", List.of());
@@ -289,34 +292,25 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
 
         Assertions.assertNotNull(saved.getResolutionCode(), "resolutionCode should be set");
 
-        var preferredId =
-                resolutionCodeRepository
-                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
-                        .stream()
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected active ResolutionCode not found"))
-                        .getId();
+        var preferredId = Math.max(openEnded.getId(), bounded.getId());
 
         Assertions.assertEquals(
                 preferredId,
                 saved.getResolutionCode().getId(),
-                "Should reference the requested ResolutionCode");
+                "Should choose the highest date-valid ResolutionCode ID");
     }
 
     @Test
     @DisplayName(
-            "Create Application List Entry Result: links the requested code with a bounded end date")
-    void givenBoundedActiveCode_whenCreate_thenLinksRequestedCode() throws Exception {
+            "Create Application List Entry Result: bounded versions use the highest date-valid ID")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesHighestId() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
 
         LocalDate date = LocalDate.now(java.time.ZoneOffset.UTC);
 
-        var older = saveActiveResolutionCode("OTHER", date.minusDays(10), date.plusDays(5));
+        var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
         var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
 
         var token = getToken();
@@ -337,14 +331,14 @@ class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntr
         Long chosenResolutionCodeId = created.getResolutionCode().getId();
 
         Assertions.assertEquals(
-                latest.getId(),
+                Math.max(older.getId(), latest.getId()),
                 chosenResolutionCodeId,
-                "Should reference the requested ResolutionCode");
+                "Should choose the highest date-valid ResolutionCode ID");
 
         Assertions.assertNotEquals(
-                older.getId(),
+                Math.min(older.getId(), latest.getId()),
                 chosenResolutionCodeId,
-                "Should not reference a different ResolutionCode");
+                "Should not choose the lower ResolutionCode ID");
     }
 
     private static final String RTC_CODE = "RTC";

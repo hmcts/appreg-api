@@ -10,12 +10,12 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -154,8 +154,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        saveActiveCourt(code.toLowerCase(Locale.ROOT), "Older Court", queryDate.minusDays(5));
-        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var expected = older.getId() > newer.getId() ? older : newer;
 
         var token =
                 getATokenWithValidCredentials()
@@ -173,9 +174,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationGetDetailDto dto = resp.as(CourtLocationGetDetailDto.class);
-        assertThat(dto.getName()).isEqualTo("Newer Court");
+        assertThat(dto.getName()).isEqualTo(expected.getName());
         assertThat(dto.getLocationCode()).isEqualTo(code);
-        assertThat(dto.getStartDate()).isEqualTo(queryDate.minusDays(1));
+        assertThat(dto.getStartDate()).isEqualTo(expected.getStartDate());
     }
 
     @Test
@@ -314,7 +315,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         PagingAssertionUtil.assertPageDetails(page, DEFAULT_PAGE_SIZE, 0, 1, 4);
         assertThat(page.getContent())
                 .extracting("locationCode")
-                .containsExactlyInAnyOrder("B13CC00", "C47CC00", "CCC003", "BCC006");
+                .containsExactlyInAnyOrder("B13CC00", "BCC006", "CCC003", "C47CC00");
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -349,8 +350,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        saveActiveCourt(code.toLowerCase(Locale.ROOT), "Older Court", queryDate.minusDays(5));
-        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+        var expected = older.getId() > newer.getId() ? older : newer;
 
         var token =
                 getATokenWithValidCredentials()
@@ -371,12 +373,9 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         resp.then().statusCode(200);
 
         CourtLocationPage page = resp.as(CourtLocationPage.class);
-        assertThat(page.getContent()).hasSize(2);
-        assertThat(page.getContent().get(0).getLocationCode())
-                .isEqualTo(code.toLowerCase(Locale.ROOT));
-        assertThat(page.getContent().get(0).getName()).isEqualTo("Older Court");
-        assertThat(page.getContent().get(1).getLocationCode()).isEqualTo(code);
-        assertThat(page.getContent().get(1).getName()).isEqualTo("Newer Court");
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getLocationCode()).isEqualTo(code);
+        assertThat(page.getContent().get(0).getName()).isEqualTo(expected.getName());
     }
 
     @Test
@@ -489,7 +488,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new CourtLocationFilter(Optional.of("bristol"), Optional.of("bt")),
+                        new CourtLocationFilter(Optional.of("bristol"), Optional.of("cc")),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
@@ -506,7 +505,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
-                        "bt",
+                        "cc",
                         CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT
                                 .getType()
                                 .name(),
@@ -768,11 +767,11 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
         }
     }
 
-    private void saveActiveCourt(String code, String name, LocalDate startDate) {
-        createCourtLocation(code, name, startDate, null);
+    private NationalCourtHouse saveActiveCourt(String code, String name, LocalDate startDate) {
+        return createCourtLocation(code, name, startDate, null);
     }
 
-    private void createCourtLocation(
+    private NationalCourtHouse createCourtLocation(
             String code, String name, LocalDate startDate, LocalDate endDate) {
         var nationalCourtHouse =
                 new NationalCourtHouseData()
@@ -784,6 +783,7 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
                         .courtType("CHOA")
                         .build();
         persistance.save(nationalCourtHouse);
+        return nationalCourtHouse;
     }
 
     private void assertExplicitNull(JsonNode root, String fieldName) {

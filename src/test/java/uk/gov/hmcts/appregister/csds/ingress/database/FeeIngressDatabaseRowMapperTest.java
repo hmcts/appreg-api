@@ -52,6 +52,7 @@ class FeeIngressDatabaseRowMapperTest {
     @Test
     void given_resultSet_when_mapRow_then_readsFields() throws Exception {
         ResultSet rs = mock(ResultSet.class);
+        when(rs.wasNull()).thenReturn(true);
         when(rs.getLong("fee_id")).thenReturn(33L);
         when(rs.getString("fee_reference")).thenReturn("CO10.1");
         when(rs.getString("fee_description")).thenReturn("Fee");
@@ -73,5 +74,12 @@ class FeeIngressDatabaseRowMapperTest {
                                 LocalDate.of(2020, Month.JANUARY, 1),
                                 null,
                                 1L));
+        when(rs.wasNull()).thenReturn(false);
+        when(rs.getLong("csds_id")).thenReturn(696L);
+        var enriched = rowMapper.mapRow(rs, 0);
+        assertThat(enriched.csdsId()).isEqualTo(696L);
+        assertThat(rowMapper.toRow(enriched)).containsEntry("csds_id", 696L);
+        assertThat(rowMapper.columns()).contains("csds_id");
+        assertThat(rowMapper.updatableColumns()).contains("csds_id");
     }
 }

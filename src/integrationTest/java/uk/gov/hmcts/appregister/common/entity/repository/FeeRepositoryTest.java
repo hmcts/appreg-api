@@ -1,12 +1,13 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
@@ -27,16 +29,110 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         this.applicationFeeRepository = applicationFeeRepository;
     }
 
-    private static final int BASELINE_TEST_COUNT = 104;
+    @Test
+    void highestIdWinsAcrossStartDatesWithinInclusiveRange() {
+        var date = LocalDate.of(2026, 6, 9);
+        for (var offsite : List.of(false, true)) {
+            var reference = offsite ? "HISTOFF1878" : "HIST1878";
+            var old =
+                    new FeeTestData()
+                            .someMinimal()
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + (offsite ? 187810L : 187800L))
+                            .reference(reference)
+                            .isOffsite(offsite)
+                            .startDate(date.minusDays(5))
+                            .endDate(null)
+                            .build();
+            var winner =
+                    new FeeTestData()
+                            .someMinimal()
+                            .id(old.getId() + 1)
+                            .reference(reference.toLowerCase())
+                            .isOffsite(offsite)
+                            .startDate(date.minusDays(10))
+                            .endDate(date.plusDays(1))
+                            .build();
+            var future =
+                    new FeeTestData()
+                            .someMinimal()
+                            .id(old.getId() + 2)
+                            .reference(reference)
+                            .isOffsite(offsite)
+                            .startDate(date.plusDays(2))
+                            .endDate(null)
+                            .build();
+            var expired =
+                    new FeeTestData()
+                            .someMinimal()
+                            .id(old.getId() + 3)
+                            .reference(reference)
+                            .isOffsite(offsite)
+                            .startDate(date.minusDays(100))
+                            .endDate(date.minusDays(20))
+                            .build();
+            for (var fee : List.of(old, winner, future, expired)) {
+                fee.setChangedBy(0L);
+                fee.setChangedDate(OffsetDateTime.now());
+                fee.setCreatedUser("test");
+                persistance.save(fee);
+            }
+            for (var active : List.of(date.minusDays(10), date, date.plusDays(1))) {
+                assertThat(
+                                applicationFeeRepository
+                                        .findByReferenceBetweenDateWithOffsite(
+                                                reference, active, offsite)
+                                        .getFirst()
+                                        .getId())
+                        .isEqualTo(winner.getId());
+                if (offsite) {
+                    assertThat(applicationFeeRepository.findOffsite(active).getFirst().getId())
+                            .isEqualTo(winner.getId());
+                } else {
+                    assertThat(
+                                    applicationFeeRepository
+                                            .findByReferenceBetweenDate(reference, active)
+                                            .getFirst()
+                                            .getId())
+                            .isEqualTo(winner.getId());
+                    assertThat(
+                                    applicationFeeRepository
+                                            .findByReferenceInBetweenDate(
+                                                    List.of(reference.toLowerCase()), active)
+                                            .getFirst()
+                                            .getId())
+                            .isEqualTo(winner.getId());
+                }
+            }
+            assertThat(
+                            applicationFeeRepository
+                                    .findByReferenceBetweenDateWithOffsite(
+                                            reference, date.plusDays(2), offsite)
+                                    .getFirst()
+                                    .getId())
+                    .isEqualTo(future.getId());
+            assertThat(
+                            applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
+                                    reference, date.minusDays(11), offsite))
+                    .isEmpty();
+            // Explicit stored IDs still identify their original versions, not the preferred
+            // version.
+            assertThat(
+                            applicationFeeRepository
+                                    .findByIdsBetweenDate(List.of(old.getId()), date)
+                                    .getFirst()
+                                    .getId())
+                    .isEqualTo(old.getId());
+        }
+    }
 
     @Test
     void testBasicInsertionUpdate() {
         // assert that the save has occurred
         long count = applicationFeeRepository.count();
-        assertEquals(BASELINE_TEST_COUNT, count);
 
         // test save
         Fee fee = persistance.save(new FeeTestData().someComplete());
+        assertEquals(count + 1, applicationFeeRepository.count());
 
         // test get
         Optional<Fee> feeToAssertAgainst = applicationFeeRepository.findById(fee.getId());
@@ -67,7 +163,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void testSearchForFeeWithoutOffsitePrefersNullEndDate() {
+    void testSearchForFeeWithoutOffsitePrefersHighestId() {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String reference = "ZZFEE1";
 
@@ -85,7 +181,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         preferred.setDescription("Open-ended overlap fee");
         preferred.setAmount(BigDecimal.valueOf(34));
         preferred.setOffsite(false);
-        preferred.setStartDate(today.minusDays(11));
+        preferred.setStartDate(today.minusDays(10));
         preferred.setEndDate(null);
         preferred = persistance.save(preferred);
 
@@ -94,13 +190,12 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                         reference, today, false);
 
         assertEquals(2, results.size());
-        assertEquals(preferred.getId(), results.getFirst().getId());
-        assertNull(results.getFirst().getEndDate());
-        assertEquals(bounded.getId(), results.get(1).getId());
+        assertEquals(Math.max(preferred.getId(), bounded.getId()), results.getFirst().getId());
+        assertEquals(Math.min(preferred.getId(), bounded.getId()), results.get(1).getId());
     }
 
     @Test
-    void testBatchSearchForFeeWithoutOffsiteGroupsByReferenceAndPrefersNullEndDate() {
+    void testBatchSearchForFeeWithoutOffsiteGroupsByReferenceAndPrefersHighestId() {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String firstReference = "ZZFEE2";
 
@@ -118,7 +213,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
         firstPreferred.setDescription("Open-ended first fee");
         firstPreferred.setAmount(BigDecimal.valueOf(34));
         firstPreferred.setOffsite(false);
-        firstPreferred.setStartDate(today.minusDays(11));
+        firstPreferred.setStartDate(today.minusDays(10));
         firstPreferred.setEndDate(null);
         firstPreferred = persistance.save(firstPreferred);
 
@@ -138,8 +233,10 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                         today);
 
         assertEquals(3, results.size());
-        assertEquals(firstPreferred.getId(), results.get(0).getId());
-        assertEquals(firstBounded.getId(), results.get(1).getId());
+        assertEquals(
+                Math.max(firstPreferred.getId(), firstBounded.getId()), results.get(0).getId());
+        assertEquals(
+                Math.min(firstPreferred.getId(), firstBounded.getId()), results.get(1).getId());
         assertEquals(secondFee.getId(), results.get(2).getId());
     }
 }
