@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -262,13 +263,10 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("no filters -> only active CHOA rows from seed (CCC003, BCC006)")
         void onlyActiveChoaRows() {
-            var page =
-                    repository.findAllActiveCourts(
-                            null,
-                            null,
-                            LocalDate.now(java.time.ZoneOffset.UTC),
-                            PageRequest.of(0, 20));
+            var activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
+            var page = repository.findAllActiveCourts(null, null, activeDate, Pageable.unpaged());
 
+            // Seed membership is not guaranteed on the first page of an unordered query.
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
                     .contains("CCC003", "BCC006");
@@ -277,7 +275,10 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     .allSatisfy(
                             n -> {
                                 assertThat(n.getCourtType()).isEqualTo("CHOA");
-                                assertThat(n.getEndDate()).isNull();
+                                assertThat(n.getStartDate()).isBeforeOrEqualTo(activeDate);
+                                if (n.getEndDate() != null) {
+                                    assertThat(n.getEndDate()).isAfterOrEqualTo(activeDate);
+                                }
                             });
         }
 
@@ -304,7 +305,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             null,
                             "crown",
                             LocalDate.now(java.time.ZoneOffset.UTC),
-                            PageRequest.of(0, 20));
+                            Pageable.unpaged());
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getName)
@@ -329,7 +330,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("supports pagination over seeded rows")
         void supportsPagination() {
-            // We have exactly two active CHOA rows in the seed.
+            // The seed contains at least two active CHOA rows.
             var page1 =
                     repository.findAllActiveCourts(
                             null,
