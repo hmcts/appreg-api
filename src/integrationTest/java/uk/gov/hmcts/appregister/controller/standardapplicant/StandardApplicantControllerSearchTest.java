@@ -354,15 +354,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
             throws Exception {
         String code = "SANULL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        var bounded =
-                saveStandardApplicant(
-                        code,
-                        "Time-Bounded Applicant",
-                        queryDate.minusDays(2),
-                        queryDate.plusDays(5));
-        var openEnded =
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
+        final var expected =
                 saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
-        final var expected = bounded.getId() > openEnded.getId() ? bounded : openEnded;
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -379,8 +374,7 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
                 responseSpec.as(StandardApplicantGetDetailDto.class);
         Assertions.assertEquals(code, returnedSa.getCode());
         Assertions.assertEquals(expected.getName(), returnedSa.getName());
-        Assertions.assertTrue(returnedSa.getEndDate().isPresent());
-        Assertions.assertEquals(expected.getApplicantEndDate(), returnedSa.getEndDate().get());
+        Assertions.assertNull(returnedSa.getEndDate().orElse(null));
     }
 
     @Test
@@ -388,15 +382,10 @@ class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTe
             throws Exception {
         String code = "SANULL001";
         LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        var bounded =
-                saveStandardApplicant(
-                        code,
-                        "Time-Bounded Applicant",
-                        activeDate.minusDays(2),
-                        activeDate.plusDays(5));
-        var openEnded =
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
+        final var expected =
                 saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
-        final var expected = bounded.getId() > openEnded.getId() ? bounded : openEnded;
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();

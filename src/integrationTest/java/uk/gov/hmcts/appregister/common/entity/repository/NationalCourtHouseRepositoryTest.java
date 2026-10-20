@@ -22,7 +22,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     @Test
-    void selectsHighestDateValidVersionBeforeFilteringAndPagination() throws Exception {
+    void selectsEffectivePeriodBeforeEndDateTypeFilteringAndPagination() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     var date = LocalDate.of(2026, 6, 9);
@@ -53,7 +53,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                                     .courtLocationCode("HIST1878")
                                     .name("Future court")
                                     .courtType("CHOA")
-                                    .startDate(date.plusDays(2))
+                                    .startDate(date.plusDays(3))
                                     .endDate(null)
                                     .build();
                     var otherType =
@@ -63,7 +63,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                                     .courtLocationCode("HIST1878")
                                     .name("Other type")
                                     .courtType("OTHER")
-                                    .startDate(date.minusDays(10))
+                                    .startDate(date.plusDays(4))
                                     .endDate(null)
                                     .build();
                     persistance.save(old);
@@ -99,11 +99,42 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     assertThat(repository.findActiveCourts("HIST1878", date.minusDays(2)))
                             .extracting(NationalCourtHouse::getId)
                             .containsExactly(old.getId());
-                    assertThat(repository.findActiveCourts("HIST1878", date.plusDays(2)))
+                    assertThat(repository.findActiveCourts("HIST1878", date.plusDays(3)))
                             .extracting(NationalCourtHouse::getId)
                             .containsExactly(future.getId());
                     assertThat(repository.findActiveCourts("HIST1878", date.minusDays(11)))
                             .isEmpty();
+                    var replacement =
+                            new NationalCourtHouseData()
+                                    .someMinimal()
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187805L)
+                                    .courtLocationCode("HIST1878")
+                                    .name("Expired correction")
+                                    .courtType("CHOA")
+                                    .startDate(latest.getStartDate())
+                                    .endDate(date.minusDays(1))
+                                    .build();
+                    persistance.save(replacement);
+                    for (var excluded : List.of(date, date.plusDays(2), date.plusDays(4))) {
+                        assertThat(repository.findActiveCourts("HIST1878", excluded)).isEmpty();
+                        assertThat(repository.findActiveCourtsWithDate("HIST1878", excluded))
+                                .isEmpty();
+                        assertThat(
+                                        repository
+                                                .findAllActiveCourts(
+                                                        "HIST1878",
+                                                        null,
+                                                        excluded,
+                                                        PageRequest.of(0, 1))
+                                                .getTotalElements())
+                                .isZero();
+                    }
+                    assertThat(repository.findActiveCourts("HIST1878", date.minusDays(1)))
+                            .extracting(NationalCourtHouse::getId)
+                            .containsExactly(replacement.getId());
+                    assertThat(repository.findActiveCourts("HIST1878", date.minusDays(2)))
+                            .extracting(NationalCourtHouse::getId)
+                            .containsExactly(old.getId());
                 });
     }
 

@@ -154,9 +154,8 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
-        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
-        var expected = older.getId() > newer.getId() ? older : newer;
+        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        final var expected = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
 
         var token =
                 getATokenWithValidCredentials()
@@ -350,9 +349,8 @@ class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerC
             throws Exception {
         String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now(java.time.ZoneOffset.UTC);
-        var older = saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
-        var newer = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
-        var expected = older.getId() > newer.getId() ? older : newer;
+        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        final var expected = saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
 
         var token =
                 getATokenWithValidCredentials()
