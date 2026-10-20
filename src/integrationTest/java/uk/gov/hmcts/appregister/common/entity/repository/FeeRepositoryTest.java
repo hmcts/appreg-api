@@ -30,7 +30,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void highestIdWinsAcrossStartDatesWithinInclusiveRange() {
+    void effectivePeriodsSupportBackdatingWithoutRevivingSupersededFees() {
         var date = LocalDate.of(2026, 6, 9);
         for (var offsite : List.of(false, true)) {
             var reference = offsite ? "HISTOFF1878" : "HIST1878";
@@ -40,7 +40,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                             .id(DatabaseReset.SEQUENCE_START_VALUE + (offsite ? 187810L : 187800L))
                             .reference(reference)
                             .isOffsite(offsite)
-                            .startDate(date.minusDays(5))
+                            .startDate(date.minusDays(10))
                             .endDate(null)
                             .build();
             var winner =
@@ -58,7 +58,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                             .id(old.getId() + 2)
                             .reference(reference)
                             .isOffsite(offsite)
-                            .startDate(date.plusDays(2))
+                            .startDate(date.plusDays(3))
                             .endDate(null)
                             .build();
             var expired =
@@ -106,7 +106,7 @@ class FeeRepositoryTest extends BaseRepositoryTest {
             assertThat(
                             applicationFeeRepository
                                     .findByReferenceBetweenDateWithOffsite(
-                                            reference, date.plusDays(2), offsite)
+                                            reference, date.plusDays(3), offsite)
                                     .getFirst()
                                     .getId())
                     .isEqualTo(future.getId());
@@ -114,6 +114,38 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                             applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
                                     reference, date.minusDays(11), offsite))
                     .isEmpty();
+            assertThat(
+                            applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
+                                    reference, date.minusDays(20), offsite))
+                    .extracting(Fee::getId)
+                    .containsExactly(expired.getId());
+            var replacement =
+                    new FeeTestData()
+                            .someMinimal()
+                            .id(old.getId() + 4)
+                            .reference(reference)
+                            .isOffsite(offsite)
+                            .startDate(winner.getStartDate())
+                            .endDate(date.minusDays(1))
+                            .build();
+            replacement.setChangedBy(0L);
+            replacement.setChangedDate(OffsetDateTime.now());
+            replacement.setCreatedUser("test");
+            persistance.save(replacement);
+            for (var excluded : List.of(date, date.plusDays(2))) {
+                assertThat(
+                                applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
+                                        reference, excluded, offsite))
+                        .isEmpty();
+                assertThat(applicationFeeRepository.findByReferenceBetweenDate(reference, excluded))
+                        .isEmpty();
+                assertThat(
+                                applicationFeeRepository.findByReferenceInBetweenDate(
+                                        List.of(reference.toLowerCase()), excluded))
+                        .isEmpty();
+                assertThat(applicationFeeRepository.findOffsite(excluded))
+                        .noneMatch(row -> row.getReference().equalsIgnoreCase(reference));
+            }
             // Explicit stored IDs still identify their original versions, not the preferred
             // version.
             assertThat(
@@ -189,9 +221,8 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                 applicationFeeRepository.findByReferenceBetweenDateWithOffsite(
                         reference, today, false);
 
-        assertEquals(2, results.size());
+        assertEquals(1, results.size());
         assertEquals(Math.max(preferred.getId(), bounded.getId()), results.getFirst().getId());
-        assertEquals(Math.min(preferred.getId(), bounded.getId()), results.get(1).getId());
     }
 
     @Test
@@ -232,11 +263,9 @@ class FeeRepositoryTest extends BaseRepositoryTest {
                         List.of(firstReference.toLowerCase(), secondReference.toLowerCase()),
                         today);
 
-        assertEquals(3, results.size());
+        assertEquals(2, results.size());
         assertEquals(
                 Math.max(firstPreferred.getId(), firstBounded.getId()), results.get(0).getId());
-        assertEquals(
-                Math.min(firstPreferred.getId(), firstBounded.getId()), results.get(1).getId());
-        assertEquals(secondFee.getId(), results.get(2).getId());
+        assertEquals(secondFee.getId(), results.get(1).getId());
     }
 }

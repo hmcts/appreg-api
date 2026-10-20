@@ -116,7 +116,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Nested
-    @DisplayName("latest date-valid version")
+    @DisplayName("effective-period version selection")
     class LatestDateValidVersion {
 
         @Test
@@ -132,7 +132,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        void selectsHighestDateValidIdBeforeTitleFilteringAndPagination() {
+        void selectsEffectivePeriodBeforeEndDateTitleFilteringAndPagination() {
             LocalDate t = today();
 
             ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
@@ -165,13 +165,12 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             expired.setEndDate(t.minusDays(1));
             expired.setChangedBy(1L);
             expired.setChangedDate(OffsetDateTime.now(clock));
-            repository.saveAndFlush(expired);
             assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t))
                     .map(ResolutionCode::getId)
                     .contains(savedWithEndDate.getId());
             assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.minusDays(10)))
                     .map(ResolutionCode::getId)
-                    .contains(expired.getId());
+                    .contains(savedWithEndDate.getId());
             var page = repository.findActiveOnDate("APPC", null, t, PageRequest.of(0, 1));
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getId)
@@ -191,6 +190,22 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             assertThat(second.getTotalElements()).isEqualTo(2);
             assertThat(first.getContent().getFirst().getResultCode())
                     .isNotEqualTo(second.getContent().getFirst().getResultCode());
+            repository.saveAndFlush(expired);
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t)).isEmpty();
+            assertThat(
+                            repository
+                                    .findActiveOnDate("APPC", null, t, PageRequest.of(0, 1))
+                                    .getTotalElements())
+                    .isZero();
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.minusDays(1)))
+                    .map(ResolutionCode::getId)
+                    .contains(expired.getId());
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.plusDays(1)))
+                    .map(ResolutionCode::getId)
+                    .contains(future.getId());
+            assertThat(repository.findActiveResolutionCodesByCodeAndDate("appc", t.minusDays(11)))
+                    .hasValueSatisfying(
+                            row -> assertThat(row.getId()).isLessThan(savedWithEndDate.getId()));
         }
 
         @Test

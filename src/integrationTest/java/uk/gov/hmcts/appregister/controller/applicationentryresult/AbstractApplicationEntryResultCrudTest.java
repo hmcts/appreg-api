@@ -234,6 +234,9 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
 
         var resolutionCode = new ResolutionCodeTestData().someComplete();
         resolutionCode.setResultCode(APPC_CODE);
+        // Random dates can supersede the seeded APPC with an expired effective period.
+        resolutionCode.setStartDate(TEST_DATE);
+        resolutionCode.setEndDate(null);
         persistance.save(resolutionCode);
 
         var entryResult = createAndSaveResolution(entry, resolutionCode);

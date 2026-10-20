@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 
 /**
- * Repository interface for managing Application Fees.
+ * Reference lookups select the latest effective start-date group, then its highest-ID version.
+ * Explicit ID lookups retain historical references.
  */
 public interface FeeRepository extends JpaRepository<Fee, Long> {
 
@@ -33,6 +34,14 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
           ((f.endDate IS NULL OR  f.endDate >= :dateTime) AND f.isOffsite = false
         AND f.startDate <= :dateTime)
+        AND f.id = (
+            SELECT MAX(v.id) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate = f.startDate
+        )
+        AND f.startDate = (
+            SELECT MAX(v.startDate) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate <= :dateTime
+        )
         ORDER BY f.id DESC
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
@@ -44,12 +53,20 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE LOWER(f.reference) IN :references
           AND ((f.endDate IS NULL OR f.endDate >= :dateTime) AND f.isOffsite = false
           AND f.startDate <= :dateTime)
+        AND f.id = (
+            SELECT MAX(v.id) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate = f.startDate
+        )
+        AND f.startDate = (
+            SELECT MAX(v.startDate) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate <= :dateTime
+        )
         ORDER BY LOWER(f.reference), f.id DESC
         """)
     List<Fee> findByReferenceInBetweenDate(Collection<String> references, LocalDate dateTime);
 
     /**
-     * <<<<<<< HEAD Finds a list of Fee entities by their reference and offsite status.
+     * Finds a list of Fee entities by their reference and offsite status.
      *
      * @param reference the reference to search for
      * @return fee entities matching the reference and offsite status
@@ -61,6 +78,14 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
         ((f.endDate IS NULL OR  f.endDate >= :dateTime)
         AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
+        AND f.id = (
+            SELECT MAX(v.id) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate = f.startDate
+        )
+        AND f.startDate = (
+            SELECT MAX(v.startDate) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate <= :dateTime
+        )
         ORDER BY f.id DESC
         """)
     List<Fee> findByReferenceBetweenDateWithOffsite(
@@ -100,6 +125,14 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (f.isOffsite=true AND
           (f.endDate IS NULL OR  f.endDate >= :dateTime)
                   AND f.startDate <= :dateTime)
+        AND f.id = (
+            SELECT MAX(v.id) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate = f.startDate
+        )
+        AND f.startDate = (
+            SELECT MAX(v.startDate) FROM Fee v
+            WHERE LOWER(v.reference) = LOWER(f.reference) AND v.startDate <= :dateTime
+        )
         ORDER BY f.id DESC
         """)
     List<Fee> findOffsite(LocalDate dateTime);

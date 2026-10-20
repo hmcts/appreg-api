@@ -10,10 +10,10 @@ import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 
 /**
- * Date-valid resolution-code versions, selected consistently for lookups and searches.
+ * Selects the latest effective start-date group, then its highest-ID version, without fallback.
  */
 public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, Long> {
-    /** Returns the highest-ID version valid on the supplied date, or empty. */
+    /** Returns the effective-period winner only if it has not expired. */
     @Query(
             """
         SELECT rc
@@ -22,14 +22,19 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
         AND rc.id = (
             SELECT MAX(v.id) FROM ResolutionCode v
             WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
-              AND v.startDate <= :date
-              AND (v.endDate IS NULL OR v.endDate >= :date)
+              AND v.startDate = rc.startDate
         )
+        AND rc.startDate = (
+            SELECT MAX(v.startDate) FROM ResolutionCode v
+            WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
+              AND v.startDate <= :date
+        )
+        AND (rc.endDate IS NULL OR rc.endDate >= :date)
         """)
     Optional<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
 
-    /** Filters and paginates the highest-ID date-valid version of each business code. */
+    /** Filters and paginates eligible effective-period winners. */
     @Query(
             """
         SELECT rc
@@ -39,9 +44,14 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
         AND rc.id = (
             SELECT MAX(v.id) FROM ResolutionCode v
             WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
-              AND v.startDate <= :date
-              AND (v.endDate IS NULL OR v.endDate >= :date)
+              AND v.startDate = rc.startDate
         )
+        AND rc.startDate = (
+            SELECT MAX(v.startDate) FROM ResolutionCode v
+            WHERE LOWER(v.resultCode) = LOWER(rc.resultCode)
+              AND v.startDate <= :date
+        )
+        AND (rc.endDate IS NULL OR rc.endDate >= :date)
         """)
     Page<ResolutionCode> findActiveOnDate(
             @Param("code") String code,

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -22,7 +23,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     @Test
-    void selectsHighestDateValidVersionBeforeFilteringAndPagination() throws Exception {
+    void selectsEffectivePeriodBeforeEndDateTypeFilteringAndPagination() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     var date = LocalDate.of(2026, 6, 9);
@@ -53,7 +54,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                                     .courtLocationCode("HIST1878")
                                     .name("Future court")
                                     .courtType("CHOA")
-                                    .startDate(date.plusDays(2))
+                                    .startDate(date.plusDays(3))
                                     .endDate(null)
                                     .build();
                     var otherType =
@@ -63,7 +64,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                                     .courtLocationCode("HIST1878")
                                     .name("Other type")
                                     .courtType("OTHER")
-                                    .startDate(date.minusDays(10))
+                                    .startDate(date.plusDays(4))
                                     .endDate(null)
                                     .build();
                     persistance.save(old);
@@ -99,11 +100,42 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     assertThat(repository.findActiveCourts("HIST1878", date.minusDays(2)))
                             .extracting(NationalCourtHouse::getId)
                             .containsExactly(old.getId());
-                    assertThat(repository.findActiveCourts("HIST1878", date.plusDays(2)))
+                    assertThat(repository.findActiveCourts("HIST1878", date.plusDays(3)))
                             .extracting(NationalCourtHouse::getId)
                             .containsExactly(future.getId());
                     assertThat(repository.findActiveCourts("HIST1878", date.minusDays(11)))
                             .isEmpty();
+                    var replacement =
+                            new NationalCourtHouseData()
+                                    .someMinimal()
+                                    .id(DatabaseReset.SEQUENCE_START_VALUE + 187805L)
+                                    .courtLocationCode("HIST1878")
+                                    .name("Expired correction")
+                                    .courtType("CHOA")
+                                    .startDate(latest.getStartDate())
+                                    .endDate(date.minusDays(1))
+                                    .build();
+                    persistance.save(replacement);
+                    for (var excluded : List.of(date, date.plusDays(2), date.plusDays(4))) {
+                        assertThat(repository.findActiveCourts("HIST1878", excluded)).isEmpty();
+                        assertThat(repository.findActiveCourtsWithDate("HIST1878", excluded))
+                                .isEmpty();
+                        assertThat(
+                                        repository
+                                                .findAllActiveCourts(
+                                                        "HIST1878",
+                                                        null,
+                                                        excluded,
+                                                        PageRequest.of(0, 1))
+                                                .getTotalElements())
+                                .isZero();
+                    }
+                    assertThat(repository.findActiveCourts("HIST1878", date.minusDays(1)))
+                            .extracting(NationalCourtHouse::getId)
+                            .containsExactly(replacement.getId());
+                    assertThat(repository.findActiveCourts("HIST1878", date.minusDays(2)))
+                            .extracting(NationalCourtHouse::getId)
+                            .containsExactly(old.getId());
                 });
     }
 
@@ -148,8 +180,8 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("selects the highest-ID date-valid row when multiple courts share a code")
-        void selectsHighestId() {
+        @DisplayName("selects the latest start-date group even when an older group has a higher ID")
+        void selectsLatestStartDateBeforeId() {
             LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHNF001";
 
@@ -158,6 +190,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             .someMinimal()
                             .courtLocationCode(code)
                             .name("Older Court")
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + 187820L)
                             .startDate(activeDate.minusDays(10))
                             .endDate(null)
                             .courtType("CHOA")
@@ -168,19 +201,20 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             .someMinimal()
                             .courtLocationCode(code)
                             .name("Newer Court")
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + 187819L)
                             .startDate(activeDate.minusDays(1))
                             .endDate(null)
                             .courtType("CHOA")
                             .build();
 
-            NationalCourtHouse savedOlderCourt = persistance.save(olderCourt);
+            persistance.save(olderCourt);
             NationalCourtHouse savedNewerCourt = persistance.save(newerCourt);
 
             List<NationalCourtHouse> result = repository.findActiveCourtsWithDate(code, activeDate);
 
             assertThat(result)
                     .extracting(NationalCourtHouse::getId)
-                    .containsExactly(Math.max(savedNewerCourt.getId(), savedOlderCourt.getId()));
+                    .containsExactly(savedNewerCourt.getId());
         }
 
         @Test
@@ -229,13 +263,10 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("no filters -> only active CHOA rows from seed (CCC003, BCC006)")
         void onlyActiveChoaRows() {
-            var page =
-                    repository.findAllActiveCourts(
-                            null,
-                            null,
-                            LocalDate.now(java.time.ZoneOffset.UTC),
-                            PageRequest.of(0, 20));
+            var activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
+            var page = repository.findAllActiveCourts(null, null, activeDate, Pageable.unpaged());
 
+            // Seed membership is not guaranteed on the first page of an unordered query.
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
                     .contains("CCC003", "BCC006");
@@ -244,7 +275,10 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                     .allSatisfy(
                             n -> {
                                 assertThat(n.getCourtType()).isEqualTo("CHOA");
-                                assertThat(n.getEndDate()).isNull();
+                                assertThat(n.getStartDate()).isBeforeOrEqualTo(activeDate);
+                                if (n.getEndDate() != null) {
+                                    assertThat(n.getEndDate()).isAfterOrEqualTo(activeDate);
+                                }
                             });
         }
 
@@ -271,7 +305,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             null,
                             "crown",
                             LocalDate.now(java.time.ZoneOffset.UTC),
-                            PageRequest.of(0, 20));
+                            Pageable.unpaged());
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getName)
@@ -296,7 +330,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("supports pagination over seeded rows")
         void supportsPagination() {
-            // We have exactly two active CHOA rows in the seed.
+            // The seed contains at least two active CHOA rows.
             var page1 =
                     repository.findAllActiveCourts(
                             null,

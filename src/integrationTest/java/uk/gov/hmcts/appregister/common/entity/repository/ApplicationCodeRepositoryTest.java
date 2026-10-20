@@ -82,7 +82,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void testAllDateQueriesSelectHighestValidIdWithoutPreferringOpenEndedVersions() {
+    void testEffectivePeriodsPreserveBackdatingWithoutRevivingSupersededVersions() {
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
         String code = "ZZ90011";
 
@@ -90,7 +90,7 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         bounded.setId(nextId++);
         bounded.setCode(code);
         bounded.setTitle("Bounded overlap");
-        bounded.setStartDate(today.minusDays(10));
+        bounded.setStartDate(today.minusDays(20));
         bounded.setEndDate(null);
         bounded = persistance.save(bounded);
 
@@ -102,7 +102,6 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         preferred.setEndDate(today);
         preferred = persistance.save(preferred);
         saveApplicationCode(code, "Future version", today.plusDays(1), null);
-        saveApplicationCode(code, "Expired version", today.minusDays(20), today.minusDays(1));
 
         var results = applicationCodeRepository.findByCodeAndDate(code, today);
 
@@ -123,9 +122,29 @@ class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                 .isEmpty();
         assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(20)))
                 .map(ApplicationCode::getTitle)
-                .contains("Expired version");
+                .contains("Latest bounded version");
         assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(21)))
                 .isEmpty();
+        saveApplicationCode(code, "Expired version", today.minusDays(20), today.minusDays(1));
+        // Even a higher-ID correction to an earlier period cannot revive it after replacement.
+        var earlier = saveApplicationCode(code, "Earlier period", today.minusDays(30), null);
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today)).isEmpty();
+        assertThat(applicationCodeRepository.findAllByDate(today))
+                .noneMatch(item -> item.getCode().equalsIgnoreCase(code));
+        assertThat(
+                        applicationCodeRepository
+                                .search(code, null, today, PageRequest.of(0, 1))
+                                .getTotalElements())
+                .isZero();
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(21)))
+                .map(ApplicationCode::getId)
+                .contains(earlier.getId());
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today.minusDays(1)))
+                .map(ApplicationCode::getTitle)
+                .contains("Expired version");
+        assertThat(applicationCodeRepository.findByCodeAndDate(code, today.plusDays(1)))
+                .map(ApplicationCode::getTitle)
+                .contains("Future version");
     }
 
     @Test

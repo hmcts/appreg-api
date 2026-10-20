@@ -50,7 +50,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     var future = new StandardApplicantTestData().someComplete();
                     future.setId(DatabaseReset.SEQUENCE_START_VALUE + 900003L);
                     future.setApplicantCode("HIST1878");
-                    future.setApplicantStartDate(date.plusDays(2));
+                    future.setApplicantStartDate(date.plusDays(3));
                     future.setApplicantEndDate(null);
                     persistance.save(future);
                     assertThat(repository.findStandardApplicantByCode("HIST1878"))
@@ -119,6 +119,63 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     row ->
                                             assertThat(row.getStandardApplicant().getId())
                                                     .isEqualTo(latest.getId()));
+                    var replacement = new StandardApplicantTestData().someComplete();
+                    replacement.setId(DatabaseReset.SEQUENCE_START_VALUE + 900004L);
+                    replacement.setApplicantCode("HIST1878");
+                    replacement.setApplicantStartDate(latest.getApplicantStartDate());
+                    replacement.setApplicantEndDate(date.minusDays(1));
+                    persistance.save(replacement);
+                    for (var excluded : List.of(date, date.plusDays(2))) {
+                        assertThat(
+                                        repository.findStandardApplicantByCodeAndDate(
+                                                "HIST1878", excluded))
+                                .isEmpty();
+                        assertThat(repository.findAllByDate(excluded))
+                                .noneMatch(
+                                        row -> row.getApplicantCode().equalsIgnoreCase("HIST1878"));
+                        assertThat(
+                                        repository
+                                                .search(
+                                                        "HIST1878",
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        null,
+                                                        excluded,
+                                                        page)
+                                                .getTotalElements())
+                                .isZero();
+                        assertThat(
+                                        repository
+                                                .search(
+                                                        "HIST1878",
+                                                        null,
+                                                        null,
+                                                        excluded,
+                                                        excluded,
+                                                        excluded,
+                                                        page)
+                                                .getTotalElements())
+                                .isZero();
+                    }
+                    assertThat(
+                                    repository.findStandardApplicantByCodeAndDate(
+                                            "HIST1878", date.minusDays(1)))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(replacement.getId());
+                    assertThat(
+                                    repository.findStandardApplicantByCodeAndDate(
+                                            "HIST1878", date.minusDays(2)))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(old.getId());
+                    assertThat(
+                                    repository.findStandardApplicantByCodeAndDate(
+                                            "HIST1878", date.plusDays(3)))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(future.getId());
+                    assertThat(repository.findStandardApplicantByCode("HIST1878"))
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(future.getId());
                 });
     }
 
@@ -270,7 +327,7 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void testFindByCodeSelectsHighestIdRegardlessOfDates() throws Exception {
+    void testFindByCodeSelectsLatestStartDateGroup() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 this::assertFindByCodeIncludesHistoricRowsButPrefersCurrentActiveRecord);
     }
@@ -297,20 +354,15 @@ class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
         openEndedApplicant.setApplicantEndDate(null);
 
-        StandardApplicant savedHistoricApplicant = persistance.save(historicApplicant);
-        StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
+        persistance.save(historicApplicant);
+        persistance.save(boundedApplicant);
         StandardApplicant savedOpenEndedApplicant = persistance.save(openEndedApplicant);
 
         List<StandardApplicant> retrievedApplicants = repository.findStandardApplicantByCode(code);
 
         assertThat(retrievedApplicants)
                 .extracting(StandardApplicant::getId)
-                .containsExactly(
-                        Math.max(
-                                savedHistoricApplicant.getId(),
-                                Math.max(
-                                        savedOpenEndedApplicant.getId(),
-                                        savedBoundedApplicant.getId())));
+                .containsExactly(savedOpenEndedApplicant.getId());
     }
 
     @Test

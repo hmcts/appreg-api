@@ -115,8 +115,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(11.0),
                         Optional.of("CO5.2"),
-                        Optional.of("Offsite: JP perform function away from court"),
-                        Optional.of(40.0),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(29.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -173,8 +173,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(11.0),
                         Optional.of("CO5.2"),
-                        Optional.of("Offsite: JP perform function away from court"),
-                        Optional.of(40.0),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(29.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -230,8 +230,8 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                                 "Copy of a document on a computer disk or in other electronic form"),
                         Optional.of(10.0),
                         Optional.of("CO5.2"),
-                        Optional.of("Offsite: JP perform function away from court"),
-                        Optional.of(70.0),
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(25.0),
                         Optional.of("CO1.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
@@ -686,7 +686,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
                 "Certified copy of a memorandum of conviction.",
                 firstEntry.getFeeDescription().get());
         assertEquals(1500L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(2900L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -726,7 +726,7 @@ class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
         responseSpec.then().statusCode(200);
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
-        assertEquals(4000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+        assertEquals(2900, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
         assertTrue(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
