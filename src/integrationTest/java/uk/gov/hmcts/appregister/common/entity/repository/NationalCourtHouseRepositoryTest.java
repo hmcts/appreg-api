@@ -179,8 +179,8 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("selects the highest-ID date-valid row when multiple courts share a code")
-        void selectsHighestId() {
+        @DisplayName("selects the latest start-date group even when an older group has a higher ID")
+        void selectsLatestStartDateBeforeId() {
             LocalDate activeDate = LocalDate.now(java.time.ZoneOffset.UTC);
             String code = "NCHNF001";
 
@@ -189,6 +189,7 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             .someMinimal()
                             .courtLocationCode(code)
                             .name("Older Court")
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + 187820L)
                             .startDate(activeDate.minusDays(10))
                             .endDate(null)
                             .courtType("CHOA")
@@ -199,19 +200,20 @@ class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
                             .someMinimal()
                             .courtLocationCode(code)
                             .name("Newer Court")
+                            .id(DatabaseReset.SEQUENCE_START_VALUE + 187819L)
                             .startDate(activeDate.minusDays(1))
                             .endDate(null)
                             .courtType("CHOA")
                             .build();
 
-            NationalCourtHouse savedOlderCourt = persistance.save(olderCourt);
+            persistance.save(olderCourt);
             NationalCourtHouse savedNewerCourt = persistance.save(newerCourt);
 
             List<NationalCourtHouse> result = repository.findActiveCourtsWithDate(code, activeDate);
 
             assertThat(result)
                     .extracting(NationalCourtHouse::getId)
-                    .containsExactly(Math.max(savedNewerCourt.getId(), savedOlderCourt.getId()));
+                    .containsExactly(savedNewerCourt.getId());
         }
 
         @Test
