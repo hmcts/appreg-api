@@ -71,7 +71,7 @@ public class StandardApplicantIngressApplyService {
         parameters.put("today", businessDateProvider.currentUkDate());
         if (!incomingCodes.isEmpty()) {
             // A new version must not end-date older versions of a code still in the feed.
-            sql += " AND standard_applicant_code NOT IN (:incomingCodes)";
+            sql += " AND UPPER(standard_applicant_code) NOT IN (:incomingCodes)";
             parameters.put("incomingCodes", incomingCodes);
         }
         jdbcTemplate.update(sql, parameters);

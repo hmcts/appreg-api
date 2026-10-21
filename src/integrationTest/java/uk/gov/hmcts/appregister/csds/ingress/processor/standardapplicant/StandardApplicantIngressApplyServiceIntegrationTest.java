@@ -27,7 +27,7 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
     @Test
     void
             given_missingStagingApplicant_when_reconcileAndUpsert_then_endDatesItAndUpsertsIncomingRecord() {
-        insertOpenStagingApplicant(1L);
+        insertOpenStagingApplicant(1L, "OLD");
         var incoming = record(2L, "County Hall");
 
         applyService.reconcileAndUpsert("standard_applicants_staging", "sa_id", diffFor(incoming));
@@ -42,8 +42,26 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
     }
 
     @Test
+    void
+            given_mixedCaseStoredCodes_when_reconcileAndUpsert_then_preservesPresentAndRejectedCodes() {
+        insertOpenStagingApplicant(1L, "dccmh");
+        insertOpenStagingApplicant(2L, "Future");
+        insertOpenStagingApplicant(3L, "OLD");
+        var incoming = record(1L, "Old address");
+        var diff =
+                new StandardApplicantDiffResult(
+                        Map.of(incoming.id(), incoming), Map.of(), List.of(), Set.of("fUtUrE"));
+
+        applyService.reconcileAndUpsert("standard_applicants_staging", "sa_id", diff);
+
+        assertThat(endDate(1L)).isNull();
+        assertThat(endDate(2L)).isNull();
+        assertThat(endDate(3L)).isEqualTo(LocalDate.now());
+    }
+
+    @Test
     void given_upsertFailure_when_reconcileAndUpsert_then_rollsBackTheEndDate() {
-        insertOpenStagingApplicant(1L);
+        insertOpenStagingApplicant(1L, "OLD");
         var invalidIncoming = record(2L, "x".repeat(36));
 
         assertThatThrownBy(
@@ -58,7 +76,7 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
         assertThat(endDate(1L)).isNull();
     }
 
-    private void insertOpenStagingApplicant(Long id) {
+    private void insertOpenStagingApplicant(Long id, String code) {
         jdbcTemplate.update(
                 """
                 INSERT INTO %s.standard_applicants_staging (
@@ -68,7 +86,7 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
                 """
                         .formatted(schema),
                 id,
-                "OLD",
+                code,
                 LocalDate.of(2020, 1, 1),
                 1L,
                 0L,

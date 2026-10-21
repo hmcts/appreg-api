@@ -67,7 +67,7 @@ class StandardApplicantIngressApplyServiceTest {
         verify(jdbcTemplate).update(sqlCaptor.capture(), parametersCaptor.capture());
         assertThat(sqlCaptor.getValue())
                 .contains("UPDATE appreg.standard_applicants_staging")
-                .contains("standard_applicant_code NOT IN (:incomingCodes)")
+                .contains("UPPER(standard_applicant_code) NOT IN (:incomingCodes)")
                 .contains("version = version + 1");
         verify(bulkUpsertService)
                 .upsertBatch(
@@ -86,8 +86,23 @@ class StandardApplicantIngressApplyServiceTest {
 
         var sql = ArgumentCaptor.forClass(String.class);
         verify(jdbcTemplate).update(sql.capture(), parametersCaptor.capture());
-        assertThat(sql.getValue()).contains("standard_applicant_code NOT IN (:incomingCodes)");
+        assertThat(sql.getValue())
+                .contains("UPPER(standard_applicant_code) NOT IN (:incomingCodes)");
         assertThat(parametersCaptor.getValue().get("incomingCodes")).isEqualTo(List.of("DCCMH"));
+    }
+
+    @Test
+    void given_noIncomingOrRejectedCodes_when_reconcileAndUpsert_then_endDatesAllOpenRows() {
+        var diff = new StandardApplicantDiffResult(Map.of(), Map.of(), List.of(), Set.of());
+
+        service.reconcileAndUpsert("standard_applicants_staging", "sa_id", diff);
+
+        var sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).update(sql.capture(), parametersCaptor.capture());
+        assertThat(sql.getValue())
+                .contains("WHERE standard_applicant_end_date IS NULL")
+                .doesNotContain("NOT IN");
+        assertThat(parametersCaptor.getValue()).containsOnlyKeys("today");
     }
 
     private StandardApplicantIngressRecord record(Long id) {
