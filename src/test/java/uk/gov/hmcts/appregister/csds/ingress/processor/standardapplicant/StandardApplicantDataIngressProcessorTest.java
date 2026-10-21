@@ -13,7 +13,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -44,6 +49,10 @@ class StandardApplicantDataIngressProcessorTest {
     @Mock private JdbcIngressBackupService ingressBackupService;
 
     private CsdsIngressProperties properties;
+    private final BusinessDateProvider businessDateProvider =
+            new BusinessDateProvider(
+                    Clock.fixed(Instant.parse("2026-10-20T23:30:00Z"), ZoneOffset.UTC),
+                    ZoneId.of("Europe/London"));
     private StandardApplicantDataIngressProcessor processor;
     @TempDir Path tempDir;
 
@@ -54,6 +63,7 @@ class StandardApplicantDataIngressProcessorTest {
         lenient().when(csdsAuditService.auditLevel()).thenReturn(CsdsAuditLevel.NONE);
         processor =
                 new StandardApplicantDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -122,6 +132,7 @@ class StandardApplicantDataIngressProcessorTest {
         properties.getProcessors().getStandardApplicants().setReportingDir(tempDir.toString());
         processor =
                 new StandardApplicantDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -224,17 +235,17 @@ class StandardApplicantDataIngressProcessorTest {
     }
 
     @Test
-    void mismatchedLegacyCodeIsNotOverwrittenAndFutureDatesAreAccepted() {
+    void mismatchedLegacyCodeIsNotOverwritten() {
         when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
                 .thenReturn(List.of(stored(6278L, null, "OTHER")));
-        var future = sourceRecord(1L, 6278L, "Future").put("StartDate", "2099-01-01");
-        assertThat(diffFor(future).diffRecords())
+        var replacement = sourceRecord(1L, 6278L, "Replacement").put("StartDate", "2025-01-01");
+        assertThat(diffFor(replacement).diffRecords())
                 .singleElement()
                 .satisfies(
                         change -> {
                             assertThat(change.intended().id()).isEqualTo(100001L);
                             assertThat(change.intended().startDate())
-                                    .isEqualTo(LocalDate.of(2099, 1, 1));
+                                    .isEqualTo(LocalDate.of(2025, 1, 1));
                         });
     }
 
@@ -275,6 +286,26 @@ class StandardApplicantDataIngressProcessorTest {
                 null,
                 null,
                 null);
+    }
+
+    @Test
+    void rejectsFutureStartDatesButKeepsTheirCodesForReconciliation() {
+        var past = sourceRecord(1L, 1L, "Past").put("StartDate", "2026-10-20");
+        var today = sourceRecord(2L, 2L, "Today").put("StartDate", "2026-10-21");
+        var future = sourceRecord(3L, 3L, "Future").put("StartDate", "2026-10-22");
+        var processed = processor.preProcess(List.of(createPage(past), createPage(today, future)));
+        var records = processed.getFirst().get("records");
+        assertThat(records.size()).isEqualTo(2);
+        assertThat(records.get(0).get("ApplicantID").asLong()).isEqualTo(1L);
+        assertThat(records.get(1).get("ApplicantID").asLong()).isEqualTo(2L);
+        var rejected = processor.preProcess(List.of(createPage(future))).getFirst();
+        assertThat(rejected.get("records").isEmpty()).isTrue();
+        assertThat(rejected.get("rejectedFutureCodes").size()).isEqualTo(1);
+        assertThat(rejected.get("rejectedFutureCodes").get(0).asText()).isEqualTo("DCCMH");
+        when(tableReadService.loadAll(eq("standard_applicants_staging"), any()))
+                .thenReturn(List.of());
+        assertThat(processor.diff(List.of(rejected)).rejectedFutureCodes())
+                .containsExactly("DCCMH");
     }
 
     private ObjectNode sourceRecord(

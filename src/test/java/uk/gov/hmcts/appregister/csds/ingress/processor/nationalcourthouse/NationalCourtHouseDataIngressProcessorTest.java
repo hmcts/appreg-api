@@ -15,8 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -53,6 +58,10 @@ class NationalCourtHouseDataIngressProcessorTest {
     @TempDir Path tempDir;
 
     private CsdsIngressProperties properties;
+    private final BusinessDateProvider businessDateProvider =
+            new BusinessDateProvider(
+                    Clock.fixed(Instant.parse("2026-10-20T23:30:00Z"), ZoneOffset.UTC),
+                    ZoneId.of("Europe/London"));
     private NationalCourtHouseIngressDatabaseRowMapper rowMapper;
     private NationalCourtHouseDataIngressProcessor processor;
 
@@ -66,6 +75,7 @@ class NationalCourtHouseDataIngressProcessorTest {
         var diffService = new NationalCourtHouseDiffService(tableReadService, rowMapper);
         processor =
                 new NationalCourtHouseDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -74,6 +84,23 @@ class NationalCourtHouseDataIngressProcessorTest {
                         new NationalCourtHouseDiffReportingService(properties),
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    @Test
+    void rejectsFutureStartDatesButKeepsTodayAndPastUsingUkDate() {
+        var past = sourceRecord(1L, 1L, "Past", 1L).put("StartDate", "2026-10-20");
+        var today = sourceRecord(2L, 2L, "Today", 1L).put("StartDate", "2026-10-21");
+        var future = sourceRecord(3L, 3L, "Future", 1L).put("StartDate", "2026-10-22");
+        var records =
+                processor
+                        .preProcess(List.of(page(past), page(today, future)))
+                        .getFirst()
+                        .get("records");
+        assertThat(records.size()).isEqualTo(2);
+        assertThat(records.get(0).get("CourtID").asLong()).isEqualTo(1L);
+        assertThat(records.get(1).get("CourtID").asLong()).isEqualTo(2L);
+        assertThat(processor.preProcess(List.of(page(future))).getFirst().get("records").isEmpty())
+                .isTrue();
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -291,7 +318,7 @@ class NationalCourtHouseDataIngressProcessorTest {
     }
 
     @Test
-    void insertsSeparateFutureVersionAndReportsItsFinalId() throws Exception {
+    void insertsSeparateVersionAndReportsItsFinalId() throws Exception {
         var original =
                 new NationalCourtHouseIngressRecord(
                         3106L,
@@ -305,8 +332,8 @@ class NationalCourtHouseDataIngressProcessorTest {
         when(tableReadService.loadAll("national_court_houses_staging", rowMapper))
                 .thenReturn(List.of(original));
         var source =
-                sourceRecord(3803L, 3106L, "Future", 2L)
-                        .put("StartDate", "2099-01-01")
+                sourceRecord(3803L, 3106L, "New version", 2L)
+                        .put("StartDate", "2025-01-01")
                         .put("NCH_ID", 999);
         var pages = processor.preProcess(List.of(page(source)));
         var diff = processor.diff(pages);
@@ -317,11 +344,11 @@ class NationalCourtHouseDataIngressProcessorTest {
                             assertThat(item.intended().id()).isEqualTo(103803L);
                             assertThat(item.intended().csdsId()).isEqualTo(3803L);
                             assertThat(item.intended().startDate())
-                                    .isEqualTo(LocalDate.of(2099, 1, 1));
+                                    .isEqualTo(LocalDate.of(2025, 1, 1));
                             assertThat(item.existing()).isNull();
                         });
         assertThat(processor.buildSuccessAudits(pages, diff).toString())
-                .contains("103803", "3803", "Future");
+                .contains("103803", "3803", "New version");
         var failure =
                 new CsdsBatchUpsertException(
                         "failed",
@@ -330,7 +357,7 @@ class NationalCourtHouseDataIngressProcessorTest {
                                 new FailedUpsertRecord<>(
                                         diff.diffRecords().getFirst().intended(), "failed row")));
         assertThat(processor.buildFailureAudits(pages, diff, failure).toString())
-                .contains("103803", "3803", "Future", "failed row");
+                .contains("103803", "3803", "New version", "failed row");
         processor.report(pages, diff);
         try (var files = Files.list(tempDir)) {
             var report =

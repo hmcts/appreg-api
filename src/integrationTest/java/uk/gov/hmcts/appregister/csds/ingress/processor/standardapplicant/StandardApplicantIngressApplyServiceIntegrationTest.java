@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -92,7 +93,8 @@ class StandardApplicantIngressApplyServiceIntegrationTest extends BaseRepository
                                 incoming,
                                 null,
                                 incoming,
-                                "no existing sa_id match")));
+                                "no existing sa_id match")),
+                Set.of());
     }
 
     private StandardApplicantIngressRecord record(Long id, String addressLine1) {

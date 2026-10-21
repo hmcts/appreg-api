@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
@@ -48,6 +49,7 @@ public class ResolutionCodeDataIngressProcessor
     private final ResolutionCodeIngressDatabaseRowMapper rowMapper;
 
     public ResolutionCodeDataIngressProcessor(
+            BusinessDateProvider businessDateProvider,
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
@@ -61,7 +63,8 @@ public class ResolutionCodeDataIngressProcessor
                 properties.getProcessors().getResolutionCodes(),
                 csdsAuditService,
                 csdsIngressTransactionRunner,
-                ingressBackupService);
+                ingressBackupService,
+                businessDateProvider);
         resolutionCodeProperties = properties.getProcessors().getResolutionCodes();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -80,9 +83,11 @@ public class ResolutionCodeDataIngressProcessor
             validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
         }
 
+        val today = businessDateProvider.currentUkDate();
         val resolvedRecords =
                 rawJson.stream()
                         .flatMap(page -> extractRecords(page).stream())
+                        .filter(record -> acceptStartDate(record, today, "ResolutionCodeID"))
                         .map(this::withResolvedRcId)
                         .toList();
         ObjectNode normalisedPage = rawJson.getFirst().deepCopy();

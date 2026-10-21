@@ -12,8 +12,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -24,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -50,6 +55,10 @@ class ResolutionCodeDataIngressProcessorTest {
     @TempDir Path tempDir;
 
     private CsdsIngressProperties properties;
+    private final BusinessDateProvider businessDateProvider =
+            new BusinessDateProvider(
+                    Clock.fixed(Instant.parse("2026-10-20T23:30:00Z"), ZoneOffset.UTC),
+                    ZoneId.of("Europe/London"));
     private ResolutionCodeDiffService diffService;
     private ResolutionCodeDiffReportingService diffReportingService;
     private ResolutionCodeIngressDatabaseRowMapper rowMapper;
@@ -67,6 +76,7 @@ class ResolutionCodeDataIngressProcessorTest {
         diffReportingService = new ResolutionCodeDiffReportingService(properties);
         processor =
                 new ResolutionCodeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -75,6 +85,35 @@ class ResolutionCodeDataIngressProcessorTest {
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    @Test
+    void rejectsFutureStartDatesButKeepsTodayAndPastUsingUkDate() {
+        var past =
+                createSourceRecord(1L, "R1", "Past", "Wording", 1L).put("StartDate", "2026-10-20");
+        var today =
+                createSourceRecord(2L, "R2", "Today", "Wording", 1L).put("StartDate", "2026-10-21");
+        var future =
+                createSourceRecord(3L, "R3", "Future", "Wording", 1L)
+                        .put("StartDate", "2026-10-22");
+        var records =
+                processor
+                        .preProcess(
+                                List.of(
+                                        createPageResponse(past),
+                                        createPageResponse(today, future)))
+                        .getFirst()
+                        .get("records");
+        assertThat(records.size()).isEqualTo(2);
+        assertThat(records.get(0).get("ResolutionCodeID").asLong()).isEqualTo(1L);
+        assertThat(records.get(1).get("ResolutionCodeID").asLong()).isEqualTo(2L);
+        assertThat(
+                        processor
+                                .preProcess(List.of(createPageResponse(future)))
+                                .getFirst()
+                                .get("records")
+                                .isEmpty())
+                .isTrue();
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -771,6 +810,7 @@ class ResolutionCodeDataIngressProcessorTest {
         diffReportingService = new ResolutionCodeDiffReportingService(properties);
         processor =
                 new ResolutionCodeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),

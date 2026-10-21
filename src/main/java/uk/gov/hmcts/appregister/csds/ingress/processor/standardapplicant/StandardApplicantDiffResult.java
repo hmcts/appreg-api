@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import uk.gov.hmcts.appregister.csds.ingress.diff.IngressDiffRecord;
 
 public record StandardApplicantDiffResult(
@@ -12,4 +13,5 @@ public record StandardApplicantDiffResult(
                                 StandardApplicantIngressRecord,
                                 StandardApplicantIngressRecord,
                                 StandardApplicantIngressRecord>>
-                diffRecords) {}
+                diffRecords,
+        Set<String> rejectedFutureCodes) {}

@@ -1,7 +1,9 @@
 package uk.gov.hmcts.appregister.csds.ingress.processor.standardapplicant;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +35,15 @@ public class StandardApplicantIngressApplyService {
         val validatedTableName = CsdsSqlIdentifierValidator.requireValid(targetTable, "tableName");
         val validatedPrimaryKey =
                 CsdsSqlIdentifierValidator.requireValid(targetKeyField, "primaryKey");
-        endDateMissingApplicants(validatedTableName, diff.incomingById());
+        val incomingCodes =
+                Stream.concat(
+                                diff.incomingById().values().stream()
+                                        .map(StandardApplicantIngressRecord::code),
+                                diff.rejectedFutureCodes().stream())
+                        .map(code -> code.toUpperCase(Locale.ROOT))
+                        .distinct()
+                        .toList();
+        endDateMissingApplicants(validatedTableName, incomingCodes);
         val rows = diff.diffRecords().stream().map(IngressDiffRecord::intended).toList();
         bulkUpsertService.upsertBatch(
                 validatedTableName,
@@ -43,8 +53,7 @@ public class StandardApplicantIngressApplyService {
                 StandardApplicantIngressRecord::id);
     }
 
-    private void endDateMissingApplicants(
-            String targetTable, Map<Long, StandardApplicantIngressRecord> incomingById) {
+    private void endDateMissingApplicants(String targetTable, List<String> incomingCodes) {
         val validatedSchema = CsdsSqlIdentifierValidator.requireValid(schema, "schema");
         var sql =
                 """
@@ -60,15 +69,10 @@ public class StandardApplicantIngressApplyService {
                         .formatted(validatedSchema, targetTable); // NOSONAR
         var parameters = new HashMap<String, Object>();
         parameters.put("today", businessDateProvider.currentUkDate());
-        if (!incomingById.isEmpty()) {
+        if (!incomingCodes.isEmpty()) {
             // A new version must not end-date older versions of a code still in the feed.
             sql += " AND standard_applicant_code NOT IN (:incomingCodes)";
-            parameters.put(
-                    "incomingCodes",
-                    incomingById.values().stream()
-                            .map(StandardApplicantIngressRecord::code)
-                            .distinct()
-                            .toList());
+            parameters.put("incomingCodes", incomingCodes);
         }
         jdbcTemplate.update(sql, parameters);
     }
