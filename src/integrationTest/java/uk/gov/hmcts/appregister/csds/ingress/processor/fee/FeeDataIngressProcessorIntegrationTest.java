@@ -25,7 +25,7 @@ class FeeDataIngressProcessorIntegrationTest extends BaseRepositoryTest {
     private String schema;
 
     @Test
-    void enrichesLegacyAndPreservesVersionsAcrossReplayAndFuturePublication() {
+    void enrichesLegacyAndPreservesVersionsAcrossReplay() {
         jdbcTemplate.update(
                 """
                 INSERT INTO %s.fee_staging
@@ -67,13 +67,13 @@ class FeeDataIngressProcessorIntegrationTest extends BaseRepositoryTest {
                                         .formatted(schema)))
                 .isEqualTo(version);
 
-        source.put("CivilFeeID", 698).put("StartDate", "2099-01-01");
+        source.put("CivilFeeID", 698).put("StartDate", "2025-01-01");
         processor.apply(processor.preProcess(List.of(page)));
-        var future =
+        var laterPeriod =
                 jdbcTemplate.queryForMap(
                         "SELECT * FROM %s.fee_staging WHERE fee_id = 100698".formatted(schema));
-        assertThat(future.get("csds_id")).isEqualTo(698);
-        assertThat(future.get("fee_start_date").toString()).startsWith("2099-01-01");
+        assertThat(laterPeriod.get("csds_id")).isEqualTo(698);
+        assertThat(laterPeriod.get("fee_start_date").toString()).startsWith("2025-01-01");
         assertThat(
                         jdbcTemplate.queryForMap(
                                 "SELECT * FROM %s.fee_staging WHERE fee_id = 33".formatted(schema)))

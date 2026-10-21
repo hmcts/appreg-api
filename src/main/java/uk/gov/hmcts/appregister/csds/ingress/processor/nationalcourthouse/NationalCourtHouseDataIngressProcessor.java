@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestProcessorName;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngestResponse;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
@@ -45,6 +46,7 @@ public class NationalCourtHouseDataIngressProcessor
     private final NationalCourtHouseIngressDatabaseRowMapper rowMapper;
 
     public NationalCourtHouseDataIngressProcessor(
+            BusinessDateProvider businessDateProvider,
             CsdsIngressProperties properties,
             CsdsAuditService csdsAuditService,
             CsdsIngressTransactionRunner csdsIngressTransactionRunner,
@@ -58,7 +60,8 @@ public class NationalCourtHouseDataIngressProcessor
                 properties.getProcessors().getNationalCourtHouses(),
                 csdsAuditService,
                 csdsIngressTransactionRunner,
-                ingressBackupService);
+                ingressBackupService,
+                businessDateProvider);
         nationalCourtHouseProperties = properties.getProcessors().getNationalCourtHouses();
         this.diffService = diffService;
         this.diffReportingService = diffReportingService;
@@ -77,9 +80,11 @@ public class NationalCourtHouseDataIngressProcessor
             validateExpectedFields(firstPageRecords.getFirst(), REQUIRED_RECORD_FIELDS);
         }
 
+        val today = businessDateProvider.currentUkDate();
         val resolvedRecords =
                 rawJson.stream()
                         .flatMap(page -> extractRecords(page).stream())
+                        .filter(record -> acceptStartDate(record, today, "CourtID"))
                         .map(this::withResolvedNchId)
                         .toList();
         ObjectNode normalisedPage = rawJson.getFirst().deepCopy();

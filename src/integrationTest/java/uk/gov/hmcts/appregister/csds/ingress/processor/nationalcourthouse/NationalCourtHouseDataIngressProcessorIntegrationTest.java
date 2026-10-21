@@ -172,7 +172,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
     @Autowired private NationalCourtHouseDataIngressProcessor courtHouseProcessor;
 
     @Test
-    void preservesLegacyAndFutureVersionsAndSkipsReplay() {
+    void preservesLegacyAndLaterVersionsAndSkipsReplay() {
         var source = sourceRecord(3802L, 3106L, "Updated legacy", null, "B01CF00", 2L);
         var page = OBJECT_MAPPER.createObjectNode();
         page.putArray("records").add(source);
@@ -184,7 +184,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 3106"
                                 .formatted(schema));
         assertThat(legacy.get("csds_id")).isEqualTo(3802);
-        source.put("CourtID", 3804).put("CourtName", "Future").put("StartDate", "2099-01-01");
+        source.put("CourtID", 3804).put("CourtName", "Later period").put("StartDate", "2025-01-01");
         var second = courtHouseProcessor.ingest(List.of(page));
         assertThat(second.getInserted()).isEqualTo(1);
         assertThat(second.getUpdated()).isZero();
@@ -193,12 +193,12 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                                 "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 3106"
                                         .formatted(schema)))
                 .isEqualTo(legacy);
-        var future =
+        var laterPeriod =
                 jdbcTemplate.queryForMap(
                         "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 103804"
                                 .formatted(schema));
-        assertThat(future.get("csds_id")).isEqualTo(3804);
-        assertThat(future.get("start_date").toString()).startsWith("2099-01-01");
+        assertThat(laterPeriod.get("csds_id")).isEqualTo(3804);
+        assertThat(laterPeriod.get("start_date").toString()).startsWith("2025-01-01");
         source.put("CourtName", "Ignored replay");
         var replay = courtHouseProcessor.ingest(List.of(page));
         assertThat(replay.getInserted()).isZero();
@@ -207,7 +207,7 @@ class NationalCourtHouseDataIngressProcessorIntegrationTest extends BaseReposito
                         jdbcTemplate.queryForMap(
                                 "SELECT * FROM %s.national_court_houses_staging WHERE nch_id = 103804"
                                         .formatted(schema)))
-                .isEqualTo(future);
+                .isEqualTo(laterPeriod);
     }
 
     private ObjectNode sourceRecord(

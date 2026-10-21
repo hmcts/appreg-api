@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditEntry;
@@ -44,6 +45,22 @@ public abstract class AbstractPagedCsdsIngressProcessor<D, R> implements IDataIn
     private final CsdsAuditService csdsAuditService;
     private final CsdsIngressTransactionRunner csdsIngressTransactionRunner;
     private final JdbcIngressBackupService ingressBackupService;
+    protected final BusinessDateProvider businessDateProvider;
+
+    protected final boolean acceptStartDate(JsonNode record, LocalDate today, String idField) {
+        var startDate = requiredLocalDate(record, "StartDate");
+        if (startDate.isAfter(today)) {
+            log.warn(
+                    "Dropping future-dated {} record: {}={}, StartDate={}, UK date={}",
+                    processorName(),
+                    idField,
+                    nullableLong(record, idField),
+                    startDate,
+                    today);
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public final boolean enabled() {

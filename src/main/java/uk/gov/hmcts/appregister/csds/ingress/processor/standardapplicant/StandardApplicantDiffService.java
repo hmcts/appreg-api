@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,8 +102,17 @@ public class StandardApplicantDiffService
                                     ? "first CSDS receipt of legacy record"
                                     : "new CSDS version"));
         }
+        val rejectedFutureCodes = new HashSet<String>();
+        request.processedData()
+                .forEach(
+                        page ->
+                                page.path("rejectedFutureCodes")
+                                        .forEach(code -> rejectedFutureCodes.add(code.asText())));
         return new StandardApplicantDiffResult(
-                incomingById, existingById, List.copyOf(diffRecords));
+                incomingById,
+                existingById,
+                List.copyOf(diffRecords),
+                Set.copyOf(rejectedFutureCodes));
     }
 
     private void addIncomingRecord(

@@ -14,8 +14,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -30,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -57,6 +62,10 @@ class ApplicationCodeDataIngressProcessorTest {
     @TempDir Path tempDir;
 
     private CsdsIngressProperties properties;
+    private final BusinessDateProvider businessDateProvider =
+            new BusinessDateProvider(
+                    Clock.fixed(Instant.parse("2026-10-20T23:30:00Z"), ZoneOffset.UTC),
+                    ZoneId.of("Europe/London"));
     private ApplicationCodeDiffService diffService;
     private ApplicationCodeDiffReportingService diffReportingService;
     private ApplicationCodeIngressDatabaseRowMapper rowMapper;
@@ -73,6 +82,7 @@ class ApplicationCodeDataIngressProcessorTest {
         diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -81,6 +91,45 @@ class ApplicationCodeDataIngressProcessorTest {
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    @Test
+    void rejectsFutureStartDatesButKeepsTodayAndPastUsingUkDate() {
+        var past =
+                createSourceRecord(1L, "A1", "Past", "Wording", 1L).put("StartDate", "2026-10-20");
+        var today =
+                createSourceRecord(2L, "A2", "Today", "Wording", 1L).put("StartDate", "2026-10-21");
+        var future =
+                createSourceRecord(3L, "A3", "Future", "Wording", 1L)
+                        .put("StartDate", "2026-10-22");
+        try (var logs = LogCaptor.forClass(AbstractPagedCsdsIngressProcessor.class)) {
+            var records =
+                    processor
+                            .preProcess(
+                                    List.of(
+                                            createPageResponse(past),
+                                            createPageResponse(today, future)))
+                            .getFirst()
+                            .get("records");
+            assertThat(records.size()).isEqualTo(2);
+            assertThat(records.get(0).get("ApplicationCodeID").asLong()).isEqualTo(1L);
+            assertThat(records.get(1).get("ApplicationCodeID").asLong()).isEqualTo(2L);
+            assertThat(
+                            processor
+                                    .preProcess(List.of(createPageResponse(future)))
+                                    .getFirst()
+                                    .get("records")
+                                    .isEmpty())
+                    .isTrue();
+            assertThat(logs.getWarnLogs())
+                    .hasSize(2)
+                    .allSatisfy(
+                            message ->
+                                    assertThat(message)
+                                            .contains(
+                                                    "Dropping future-dated", "ApplicationCodeID=3",
+                                                    "StartDate=2026-10-22", "UK date=2026-10-21"));
+        }
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -311,8 +360,8 @@ class ApplicationCodeDataIngressProcessorTest {
                 .thenReturn(List.of(legacy));
         var original = createSourceRecordWithPssacid(42L, 100L, "A1", "Original", "Wording", 1L);
         original.put("EndDate", "2020-01-02");
-        var future = createSourceRecord(400L, "A2", "Future", "Wording", 4L);
-        future.put("StartDate", "2099-01-01");
+        var current = createSourceRecord(400L, "A2", "Current", "Wording", 4L);
+        current.put("StartDate", "2026-10-21");
         var first = processor.diff(processor.preProcess(List.of(createPageResponse(original))));
         assertThat(first.diffRecords().getFirst().operation()).isEqualTo(IngressOperation.UPDATE);
         var enriched = first.diffRecords().getFirst().intended();
@@ -324,7 +373,7 @@ class ApplicationCodeDataIngressProcessorTest {
         var modified = createSourceRecordWithPssacid(42L, 200L, "A1", "Modified", "Wording", 2L);
         var pages =
                 processor.preProcess(
-                        List.of(createPageResponse(future), createPageResponse(modified)));
+                        List.of(createPageResponse(current), createPageResponse(modified)));
 
         var diff = processor.diff(pages);
 
@@ -669,6 +718,7 @@ class ApplicationCodeDataIngressProcessorTest {
         diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -1089,6 +1139,7 @@ class ApplicationCodeDataIngressProcessorTest {
         diffReportingService = new ApplicationCodeDiffReportingService(properties);
         processor =
                 new ApplicationCodeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),

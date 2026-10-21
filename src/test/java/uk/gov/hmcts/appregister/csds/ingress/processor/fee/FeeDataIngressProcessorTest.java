@@ -16,8 +16,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import nl.altindag.log.LogCaptor;
@@ -28,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressClient;
 import uk.gov.hmcts.appregister.csds.ingress.CsdsIngressProperties;
 import uk.gov.hmcts.appregister.csds.ingress.audit.CsdsAuditLevel;
@@ -55,6 +60,10 @@ class FeeDataIngressProcessorTest {
     @TempDir Path tempDir;
 
     private CsdsIngressProperties properties;
+    private final BusinessDateProvider businessDateProvider =
+            new BusinessDateProvider(
+                    Clock.fixed(Instant.parse("2026-10-20T23:30:00Z"), ZoneOffset.UTC),
+                    ZoneId.of("Europe/London"));
     private FeeDiffService diffService;
     private FeeDiffReportingService diffReportingService;
     private FeeIngressDatabaseRowMapper rowMapper;
@@ -71,6 +80,7 @@ class FeeDataIngressProcessorTest {
         diffReportingService = new FeeDiffReportingService(properties);
         processor =
                 new FeeDataIngressProcessor(
+                        businessDateProvider,
                         properties,
                         csdsAuditService,
                         passthroughTransactionRunner(),
@@ -79,6 +89,31 @@ class FeeDataIngressProcessorTest {
                         diffReportingService,
                         bulkUpsertService,
                         rowMapper);
+    }
+
+    @Test
+    void rejectsFutureStartDatesButKeepsTodayAndPastUsingUkDate() {
+        var past = createSourceRecord(1L, "F1", "Past", 1L).put("StartDate", "2026-10-20");
+        var today = createSourceRecord(2L, "F2", "Today", 1L).put("StartDate", "2026-10-21");
+        var future = createSourceRecord(3L, "F3", "Future", 1L).put("StartDate", "2026-10-22");
+        var records =
+                processor
+                        .preProcess(
+                                List.of(
+                                        createPageResponse(past),
+                                        createPageResponse(today, future)))
+                        .getFirst()
+                        .get("records");
+        assertThat(records.size()).isEqualTo(2);
+        assertThat(records.get(0).get("CivilFeeID").asLong()).isEqualTo(1L);
+        assertThat(records.get(1).get("CivilFeeID").asLong()).isEqualTo(2L);
+        assertThat(
+                        processor
+                                .preProcess(List.of(createPageResponse(future)))
+                                .getFirst()
+                                .get("records")
+                                .isEmpty())
+                .isTrue();
     }
 
     private CsdsIngressTransactionRunner passthroughTransactionRunner() {
@@ -649,7 +684,7 @@ class FeeDataIngressProcessorTest {
     void compositeKeyAllowsDifferentStartDatesButRejectsSameKeyAcrossPages() {
         var first = createSourceRecord(696L, "CO10.1", "First", 1L);
         var second = createSourceRecord(697L, "co10.1", "Second", 1L);
-        second.put("StartDate", "2099-01-01");
+        second.put("StartDate", "2025-01-01");
         var pages = List.<JsonNode>of(createPageResponse(first), createPageResponse(second));
         assertThat(processor.diff(processor.preProcess(pages)).diffRecords()).hasSize(2);
         second.put("StartDate", first.get("StartDate").asText());
@@ -663,8 +698,8 @@ class FeeDataIngressProcessorTest {
     void storesNewVersionAndSkipsReplayWithoutOverwritingHistory() throws Exception {
         var source =
                 createSourceRecordWithPssFixedListId(
-                        33L, 697L, "CO10.1", "Future version", 2L, "300.00");
-        source.put("StartDate", "2099-01-01").put("FEE_ID", 999);
+                        33L, 697L, "CO10.1", "New version", 2L, "300.00");
+        source.put("StartDate", "2025-01-01").put("FEE_ID", 999);
         var legacy =
                 new FeeIngressRecord(
                         33L,
@@ -681,7 +716,7 @@ class FeeDataIngressProcessorTest {
         var intended = diff.diffRecords().getFirst().intended();
         assertThat(intended.id()).isEqualTo(100697L);
         assertThat(intended.csdsId()).isEqualTo(697L);
-        assertThat(intended.startDate()).isEqualTo(LocalDate.of(2099, 1, 1));
+        assertThat(intended.startDate()).isEqualTo(LocalDate.of(2025, 1, 1));
         assertThat(diff.existingById().get(33L)).isEqualTo(legacy);
         processor.report(pages, diff);
         try (var reports = Files.list(tempDir)) {
@@ -692,12 +727,12 @@ class FeeDataIngressProcessorTest {
             assertThat(Files.readString(report)).contains("\"33\",\"697\",\"100697\",\"insert\"");
         }
         assertThat(processor.buildSuccessAudits(pages, diff).toString())
-                .contains("100697", "697", "Future version");
+                .contains("100697", "697", "New version");
         var failure =
                 new CsdsBatchUpsertException(
                         "failed", null, List.of(new FailedUpsertRecord<>(intended, "failed row")));
         assertThat(processor.buildFailureAudits(pages, diff, failure).toString())
-                .contains("100697", "697", "Future version", "failed row");
+                .contains("100697", "697", "New version", "failed row");
         when(tableReadService.loadAll("fee_staging", rowMapper))
                 .thenReturn(List.of(legacy, intended));
         assertThat(processor.diff(pages).diffRecords()).isEmpty();

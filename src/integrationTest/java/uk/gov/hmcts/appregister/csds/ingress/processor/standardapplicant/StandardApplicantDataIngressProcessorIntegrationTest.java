@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.Date;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,15 +34,16 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
     private String schema;
 
     @Test
-    void preservesHistoryAcrossFutureVersionsAndReplaysButEndDatesMissingCodes() {
+    void preservesHistoryAcrossVersionsAndReplaysButEndDatesMissingCodes() {
         var legacy = repository.findAll().getFirst();
         var original = source(legacy.getId(), 1500000000L, legacy.getApplicantCode(), "Original");
         var first = processor.ingest(List.of(page(original)));
         assertThat(first.getUpdated()).isEqualTo(1);
         assertThat(first.getInserted()).isZero();
-        var future = source(legacy.getId(), 1500000001L, legacy.getApplicantCode(), "Future");
-        future.put("StartDate", "2099-01-01");
-        var second = processor.ingest(List.of(page(future)));
+        var replacement =
+                source(legacy.getId(), 1500000001L, legacy.getApplicantCode(), "Replacement");
+        replacement.put("StartDate", "2021-01-01");
+        var second = processor.ingest(List.of(page(replacement)));
         assertThat(second.getInserted()).isEqualTo(1);
         assertThat(second.getUpdated()).isZero();
         var params =
@@ -56,12 +58,25 @@ class StandardApplicantDataIngressProcessorIntegrationTest extends BaseRepositor
         assertThat(((Number) saved.getFirst().get("csds_id")).longValue()).isEqualTo(1500000000L);
         assertThat(((Number) saved.getLast().get("csds_id")).longValue()).isEqualTo(1500000001L);
         saved.forEach(row -> assertThat(row.get("standard_applicant_end_date")).isNull());
-        for (var record : List.of(original, future)) {
+        for (var record : List.of(original, replacement)) {
             var replay = processor.ingest(List.of(page(record)));
             assertThat(replay.getInserted()).isZero();
             assertThat(replay.getUpdated()).isZero();
         }
         assertThat(jdbc.queryForList(sql, params)).isEqualTo(saved);
+        var future = source(legacy.getId(), 1500000002L, legacy.getApplicantCode(), "Future");
+        future.put("StartDate", dates.currentUkDate().plusDays(1).toString());
+        var rejected = processor.ingest(List.of(page(future)));
+        assertThat(rejected.getInserted()).isZero();
+        assertThat(rejected.getUpdated()).isZero();
+        assertThat(jdbc.queryForList(sql, params)).isEqualTo(saved);
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM %s.standard_applicants WHERE csds_id = 1500000002"
+                                        .formatted(schema),
+                                Map.of(),
+                                Long.class))
+                .isZero();
         processor.ingest(List.of(page()));
         jdbc.queryForList(sql, params)
                 .forEach(
