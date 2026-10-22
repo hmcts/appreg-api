@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.async.service;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -198,18 +199,26 @@ public class AsyncJobServiceImpl implements AsyncJobService {
                                     throw new JobException(
                                             "Failed to process job: "
                                                     + jobStatusResponse.getJobId().getId());
-                                } else {
-                                    fireEventAndChangeState(
-                                            jobStatusResponse,
-                                            null,
-                                            JobStatus.COMPLETED,
-                                            lifecycle,
-                                            jobContext);
                                 }
-                            } catch (Exception t) {
-                                processError(t);
+
+                                fireLifecycleEvent(
+                                        jobStatusResponse,
+                                        null,
+                                        JobStatus.COMPLETED,
+                                        lifecycle,
+                                        jobContext);
+
+                                // this call will join with the current transaction to ensure the
+                                // job status is only
+                                // set to complete when the transaction is committed successfully.
+                                persistence.setCompleted(jobStatusResponse.getJobId());
+
+                            } catch (IOException t) {
+                                throw new UncheckedIOException(t);
                             }
                         });
+            } catch (Exception t) {
+                processError(t instanceof UncheckedIOException ? t.getCause() : t);
             } finally {
                 try {
                     dataReader.close();

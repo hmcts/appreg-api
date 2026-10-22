@@ -54,6 +54,9 @@ public interface AsyncJobPersistenceService {
      */
     JobIdRequest startJob(JobTypeRequest request);
 
+    /** Sets the job status to be completed. */
+    void setCompleted(JobIdRequest id);
+
     /**
      * writes a clob to the job id request.
      *

@@ -3,25 +3,43 @@ package uk.gov.hmcts.appregister.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import jakarta.persistence.EntityManager;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import uk.gov.hmcts.appregister.common.async.JobContext;
+import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
+import uk.gov.hmcts.appregister.common.async.model.JobIdRequest;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
 import uk.gov.hmcts.appregister.common.async.reader.JpaDataReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
+import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -43,12 +61,113 @@ class AsyncJobServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
+    @Autowired private AsyncJobPersistenceService jobPersistence;
+
+    @Autowired private PlatformTransactionManager transactionManager;
+
+    @Autowired private EntityManager entityManager;
+
     @BeforeEach
     void setUp() throws Exception {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getPrincipal())
                 .thenReturn(TokenGenerator.builder().build().getJwtFromToken());
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @Test
+    void given_noTransaction_when_completingJob_then_existingTransactionIsRequired() {
+        var jobId =
+                JobIdRequest.builder()
+                        .id(UUID.randomUUID())
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        Assertions.assertThrows(
+                IllegalTransactionStateException.class, () -> jobPersistence.setCompleted(jobId));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void given_pendingCompletion_when_transactionFinishes_then_dataAndStatusCommitTogether(
+            boolean failCommit) throws Exception {
+        var observedStatus = new AtomicReference<JobStatus>();
+        var observedEntryCount = new AtomicReference<Long>();
+        var failureCallbacks = new AtomicInteger();
+        var observer = new TransactionTemplate(transactionManager);
+        observer.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        var request =
+                JobTypeRequest.builder()
+                        .jobType(JobType.FEES_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+        var lifecycle =
+                new JobProcessCsvReadLifecycle(applicationCodeRepository) {
+                    @Override
+                    public void completed(AsyncJobLifecycleEvent<ApplicationCodeCsvPojo> event) {
+                        Assertions.assertTrue(
+                                TransactionSynchronizationManager.isActualTransactionActive());
+                        TransactionSynchronizationManager.registerSynchronization(
+                                new TransactionSynchronization() {
+                                    @Override
+                                    public void beforeCommit(boolean readOnly) {
+                                        // Flush completion and business writes before observing
+                                        // them
+                                        // through an independent database transaction.
+                                        entityManager.flush();
+                                        observer.executeWithoutResult(
+                                                status -> {
+                                                    observedStatus.set(
+                                                            jobPersistence
+                                                                    .getJobStatus(
+                                                                            event.getResponse()
+                                                                                    .getJobId())
+                                                                    .orElseThrow()
+                                                                    .getStatus());
+                                                    observedEntryCount.set(
+                                                            getApplicationCodesFunction
+                                                                    .apply(Pageable.unpaged())
+                                                                    .getTotalElements());
+                                                });
+                                        if (failCommit) {
+                                            throw new IllegalStateException(
+                                                    "Forced commit failure");
+                                        }
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void failed(AsyncJobLifecycleEvent<ApplicationCodeCsvPojo> event)
+                            throws IOException {
+                        failureCallbacks.incrementAndGet();
+                        super.failed(event);
+                    }
+                };
+
+        try (var reader =
+                new CsvReader<>(
+                        getClass().getResourceAsStream("/appcodes.csv"),
+                        ApplicationCodeCsvPojo.class)) {
+            var response = asyncJobService.startJob(request, reader, lifecycle);
+            if (failCommit) {
+                var exception =
+                        Assertions.assertThrows(
+                                ExecutionException.class,
+                                () -> response.getFuture().get(30, TimeUnit.SECONDS));
+                assertThat(exception).hasRootCauseMessage("Forced commit failure");
+            } else {
+                response.getFuture().get(30, TimeUnit.SECONDS);
+            }
+
+            assertThat(observedStatus.get()).isEqualTo(JobStatus.PROCESSING);
+            assertThat(observedEntryCount.get()).isZero();
+            assertThat(getApplicationCodesFunction.apply(Pageable.unpaged()).getTotalElements())
+                    .isEqualTo(failCommit ? 0 : 10);
+            assertThat(jobPersistence.getJobStatus(response.getJobId()).orElseThrow().getStatus())
+                    .isEqualTo(failCommit ? JobStatus.FAILED : JobStatus.COMPLETED);
+            assertThat(failureCallbacks.get()).isEqualTo(failCommit ? 1 : 0);
+        }
     }
 
     @Test
