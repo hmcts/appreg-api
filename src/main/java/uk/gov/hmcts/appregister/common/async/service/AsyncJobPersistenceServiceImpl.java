@@ -145,31 +145,40 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     private InputStreamResource getClobToOutputStream(JobIdRequest jobId) throws IOException {
         File file = AppRegTempFileUtil.generateTempFile("async-job-clob");
 
-        jdbcTemplate.query(
-                JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS), // NOSONAR
-                // S2077: schema is trusted Spring config, table name is a constant,
-                // and job id is parameter-bound below.
-                ps -> ps.setObject(1, jobId.getId()),
-                rs -> {
-                    try (Reader reader = rs.getCharacterStream(1);
-                            Writer writer =
-                                    Files.newBufferedWriter(
-                                            file.toPath(), StandardCharsets.UTF_8)) {
-                        if (reader != null) {
-                            reader.transferTo(writer);
+        try {
+            jdbcTemplate.query(
+                    JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS), // NOSONAR
+                    // S2077: schema is trusted Spring config, table name is a constant,
+                    // and job id is parameter-bound below.
+                    ps -> ps.setObject(1, jobId.getId()),
+                    rs -> {
+                        try (Reader reader = rs.getCharacterStream(1);
+                                Writer writer =
+                                        Files.newBufferedWriter(
+                                                file.toPath(), StandardCharsets.UTF_8)) {
+                            if (reader != null) {
+                                reader.transferTo(writer);
+                            }
+                        } catch (IOException e) {
+                            throw new SQLException(e);
                         }
-                    } catch (IOException e) {
-                        throw new SQLException(e);
-                    }
-                });
+                    });
 
-        if (file.length() > 0) {
-            // return the spring input stream resource
-            return new InputStreamResource(new DeleteableFileInputStream(file));
-        } else {
-            Files.deleteIfExists(file.toPath());
+            if (file.length() > 0) {
+                // return the spring input stream resource
+                return new InputStreamResource(new DeleteableFileInputStream(file));
+            } else {
+                Files.deleteIfExists(file.toPath());
+            }
+            return null;
+        } catch (Exception e) {
+            try {
+                Files.deleteIfExists(file.toPath());
+            } catch (IOException cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+            }
+            throw e;
         }
-        return null;
     }
 
     /**
