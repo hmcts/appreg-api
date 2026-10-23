@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.jdbc.Sql;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -79,6 +80,16 @@ import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
+// These happy-path codes need a main fee; CO1.1 is offsite-only.
+@Sql(
+        statements =
+                "UPDATE testschema.application_codes SET ac_fee_reference = 'CO2.1'"
+                        + " WHERE application_code IN ('MS99007', 'EF1213')")
+@Sql(
+        statements =
+                "UPDATE testschema.application_codes SET ac_fee_reference = 'CO1.1'"
+                        + " WHERE application_code IN ('MS99007', 'EF1213')",
+        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected static final String WEB_CONTEXT = "application-list-entries";

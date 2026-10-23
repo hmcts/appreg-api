@@ -27,7 +27,8 @@ class FeeRepositoryTest extends BaseRepositoryTest {
     @Test
     void referenceExistenceIncludesExpiredMainFeesButNotOffsiteFees() {
         String reference = "ARCPOC1907";
-        Fee expired = new FeeTestData().someMinimal().build();
+        Fee expired = new FeeTestData().someComplete();
+        expired.setId(DatabaseReset.SEQUENCE_START_VALUE + 190700L);
         expired.setReference(reference);
         expired.setOffsite(false);
         expired.setStartDate(LocalDate.of(2024, 1, 1));

@@ -169,8 +169,10 @@ class ApplicationListControllerDeleteTest extends AbstractApplicationListControl
 
         // 3) Build two EntryCreateDto payloads
         EntryCreateDto entryCreateDto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto1.setApplicationCode("ZS99007");
 
         EntryCreateDto entryCreateDto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto2.setApplicationCode("ZS99007");
 
         // 4) Create entries
         Response createResp1 =

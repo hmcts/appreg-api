@@ -57,6 +57,7 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -83,7 +84,8 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                     code.setFeeReference(reference);
                     applicationCodeRepository.saveAndFlush(code);
                     if ("EXPIRED1907".equals(reference)) {
-                        var expired = new FeeTestData().someMinimal().build();
+                        var expired = new FeeTestData().someComplete();
+                        expired.setId(DatabaseReset.SEQUENCE_START_VALUE + 190700L);
                         expired.setReference(reference);
                         expired.setOffsite(false);
                         expired.setStartDate(lodgementDate.minusYears(2));
@@ -110,7 +112,7 @@ class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudT
                         payload)
                 .then()
                 .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("code", is("EXPIRED1907".equals(reference) ? "ALE-56" : "ALE-55"))
+                .body("type", is("EXPIRED1907".equals(reference) ? "ALE-56" : "ALE-55"))
                 .body(
                         "detail",
                         is(

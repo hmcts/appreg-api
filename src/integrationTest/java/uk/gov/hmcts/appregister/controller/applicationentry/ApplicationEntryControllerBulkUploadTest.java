@@ -1448,7 +1448,9 @@ class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryC
     }
 
     private static List<PersistedFeeStatus> expectedInitialFeeStatuses() {
-        return List.of(new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null));
+        return List.of(
+                new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null),
+                new PersistedFeeStatus((short) 4, "MS99007", FeeStatusType.DUE, null));
     }
 
     private static ApiEntry expectedApiEntry(
