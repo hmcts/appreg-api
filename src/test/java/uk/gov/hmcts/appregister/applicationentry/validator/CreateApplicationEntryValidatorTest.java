@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
@@ -18,6 +19,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -112,7 +116,8 @@ class CreateApplicationEntryValidatorTest {
         fee.setId(1L);
         fee.setOffsite(true);
 
-        when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(null, fee));
+        when(feeService.resolveFeePair(Mockito.any(), Mockito.any()))
+                .thenReturn(new FeePair(fee, null));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
@@ -893,5 +898,89 @@ class CreateApplicationEntryValidatorTest {
         official.setSurname(suffix);
         official.setType(officialType);
         return official;
+    }
+
+    private PayloadForCreate<EntryCreateDto> feeValidationPayload() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setHasOffsiteFee(false);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        applicationCode.setFeeReference("CO3.1");
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(Optional.of(applicationCode));
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+        entryCreateDto.getFeeStatuses().forEach(status -> status.setStatusDate(TODAY_UK));
+        return PayloadForCreate.<EntryCreateDto>builder()
+                .id(appListUuid)
+                .data(entryCreateDto)
+                .build();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "\t"})
+    void givenMissingReference_whenCreating_thenRejectIncompleteDetails(String reference) {
+        var payload = feeValidationPayload();
+        applicationCode.setFeeReference(reference);
+        entryCreateDto.setFeeStatuses(null);
+        var error =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(AppListEntryError.FEE_DETAILS_INCOMPLETE, error.getCode());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void givenNoApplicableFee_whenCreating_thenDistinguishUnknownReferenceFromInvalidDate(
+            boolean exists) {
+        var payload = feeValidationPayload();
+        when(feeService.resolveFeePair("CO3.1", TODAY_UK.minusDays(1)))
+                .thenReturn(new FeePair(null, fee));
+        when(feeService.feeReferenceExists("CO3.1")).thenReturn(exists);
+        var error =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                exists
+                        ? AppListEntryError.FEE_DATE_INVALID
+                        : AppListEntryError.FEE_DETAILS_INCOMPLETE,
+                error.getCode());
+    }
+
+    @Test
+    void givenMissingAmount_whenCreating_thenRejectIncompleteDetails() {
+        var payload = feeValidationPayload();
+        fee.setAmount(null);
+        var error =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(AppListEntryError.FEE_DETAILS_INCOMPLETE, error.getCode());
+    }
+
+    @Test
+    void givenZeroAmount_whenCreating_thenAllow() {
+        var payload = feeValidationPayload();
+        fee.setAmount(BigDecimal.ZERO);
+        createApplicationEntryValidator.validate(payload);
+        Mockito.verify(feeService).resolveFeePair("CO3.1", TODAY_UK.minusDays(1));
+    }
+
+    @Test
+    void givenFeeNotDueAndNoReference_whenCreating_thenAllow() {
+        final var payload = feeValidationPayload();
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setFeeReference(null);
+        entryCreateDto.setFeeStatuses(null);
+        createApplicationEntryValidator.validate(payload);
+        Mockito.verifyNoInteractions(feeService);
     }
 }

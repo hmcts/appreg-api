@@ -262,7 +262,19 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONTENT_TOO_LARGE,
                     "Uploaded file must contain no more than 1,050 application entries",
-                    "ALE-54"));
+                    "ALE-54")),
+
+    FEE_DETAILS_INCOMPLETE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Fee details are missing or incomplete, please contact Crime IT Support.",
+                    "ALE-55")),
+
+    FEE_DATE_INVALID(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Fee Reference is not valid on the lodgement date, please contact Crime IT Support.",
+                    "ALE-56"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,6 +42,13 @@ class ApplicationFeeServiceImplTest {
     @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationFeeServiceImpl applicationFeeService;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void referenceExistenceUsesMainFeesRegardlessOfDate(boolean exists) {
+        when(repository.existsByReferenceIgnoreCaseAndIsOffsiteFalse("CO3.1")).thenReturn(exists);
+        assertEquals(exists, applicationFeeService.feeReferenceExists("CO3.1"));
+    }
 
     @Test
     void testMainAndOffsiteFee() {

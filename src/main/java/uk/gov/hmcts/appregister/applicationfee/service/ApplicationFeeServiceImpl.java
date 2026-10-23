@@ -27,6 +27,11 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final BusinessDateProvider businessDateProvider;
 
     @Override
+    public boolean feeReferenceExists(String feeReference) {
+        return feeRepository.existsByReferenceIgnoreCaseAndIsOffsiteFalse(feeReference);
+    }
+
+    @Override
     public FeePair resolveFeePair(String feeReference) {
         return resolveFeePair(feeReference, businessDateProvider.currentUkDate());
     }

@@ -130,6 +130,8 @@ class UpdateApplicationEntryValidatorTest {
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
                 .thenReturn(Optional.of(applicationCode));
         when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(fee, null));
+        when(feeService.resolveFeePair(Mockito.any(), Mockito.any()))
+                .thenReturn(new FeePair(fee, null));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))

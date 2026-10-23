@@ -24,6 +24,41 @@ class FeeRepositoryTest extends BaseRepositoryTest {
 
     private final FeeRepository applicationFeeRepository;
 
+    @Test
+    void referenceExistenceIncludesExpiredMainFeesButNotOffsiteFees() {
+        String reference = "ARCPOC1907";
+        Fee expired = new FeeTestData().someMinimal().build();
+        expired.setReference(reference);
+        expired.setOffsite(false);
+        expired.setStartDate(LocalDate.of(2024, 1, 1));
+        expired.setEndDate(LocalDate.of(2024, 4, 30));
+        persistance.save(expired);
+        assertThat(
+                        applicationFeeRepository.existsByReferenceIgnoreCaseAndIsOffsiteFalse(
+                                "arcpoc1907"))
+                .isTrue();
+        assertThat(
+                        applicationFeeRepository.findByReferenceBetweenDate(
+                                reference, LocalDate.of(2026, 10, 22)))
+                .isEmpty();
+        assertThat(
+                        applicationFeeRepository.findByReferenceBetweenDate(
+                                reference, expired.getStartDate()))
+                .hasSize(1);
+        assertThat(
+                        applicationFeeRepository.findByReferenceBetweenDate(
+                                reference, expired.getEndDate()))
+                .hasSize(1);
+        assertThat(
+                        applicationFeeRepository.existsByReferenceIgnoreCaseAndIsOffsiteFalse(
+                                "UNKNOWN1907"))
+                .isFalse();
+        expired.setOffsite(true);
+        applicationFeeRepository.saveAndFlush(expired);
+        assertThat(applicationFeeRepository.existsByReferenceIgnoreCaseAndIsOffsiteFalse(reference))
+                .isFalse();
+    }
+
     @Autowired
     FeeRepositoryTest(FeeRepository applicationFeeRepository) {
         this.applicationFeeRepository = applicationFeeRepository;

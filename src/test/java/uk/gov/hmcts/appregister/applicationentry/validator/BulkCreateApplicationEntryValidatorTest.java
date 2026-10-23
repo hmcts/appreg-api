@@ -109,7 +109,7 @@ class BulkCreateApplicationEntryValidatorTest {
         fee.setOffsite(true);
 
         when(feeService.resolveFeePair(notNull())).thenReturn(new FeePair(null, fee));
-        when(feeService.resolveFeePair(notNull(), notNull())).thenReturn(new FeePair(null, fee));
+        when(feeService.resolveFeePair(notNull(), notNull())).thenReturn(new FeePair(fee, fee));
     }
 
     @Test
@@ -206,6 +206,28 @@ class BulkCreateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, appRegistryException.getCode());
         assertThat(appRegistryException.getMessage()).isEqualTo("No valid code can be found null");
+    }
+
+    @Test
+    void bulkCreationRejectsFeeOutsideLodgementDateEvenWithoutFeeStatuses() {
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setFeeReference("EXPIRED1907");
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        when(feeService.resolveFeePair("EXPIRED1907", TODAY_UK.minusDays(1)))
+                .thenReturn(new FeePair(null, fee));
+        when(feeService.feeReferenceExists("EXPIRED1907")).thenReturn(true);
+        var error =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payload(), (validatable, result) -> result));
+        Assertions.assertEquals(AppListEntryError.FEE_DATE_INVALID, error.getCode());
     }
 
     @Test
