@@ -132,6 +132,15 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void setCompleted(JobIdRequest id) {
+        var asyncJob = asyncJobRepository.findByJobId(id.getId(), id.getUserName());
+
+        asyncJob.setJobState(JobStatusType.COMPLETED);
+        asyncJobRepository.save(asyncJob);
+    }
+
+    @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = IOException.class)
     public void writeClob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException {
         setClob(inputStream, jobIdRequest);

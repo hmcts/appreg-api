@@ -121,9 +121,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
                             JobIdRequest.builder().id(jobId).userName(userId).build(),
                             JobStatus.PROCESSING);
             verify(persistence)
-                    .setJobStatus(
-                            JobIdRequest.builder().id(jobId).userName(userId).build(),
-                            JobStatus.COMPLETED);
+                    .setCompleted(JobIdRequest.builder().id(jobId).userName(userId).build());
 
             // assert the number of the events fired
             Assertions.assertEquals(
@@ -204,7 +202,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
+        verify(persistence).setCompleted(jobIdRequest);
     }
 
     @Test
@@ -241,7 +239,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
         verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
-        verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
+        verify(persistence, never()).setCompleted(jobIdRequest);
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
@@ -282,6 +280,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.VALIDATING);
         verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.PROCESSING);
+        verify(persistence, never()).setCompleted(jobIdRequest);
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
@@ -295,6 +294,40 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
         Assertions.assertEquals(JobStatus.PROCESSING, events.get(5).getJobStatus());
         Assertions.assertEquals(JobStatus.PROCESSING, events.get(6).getJobStatus());
         Assertions.assertEquals(JobStatus.COMPLETED, events.get(7).getJobStatus());
+    }
+
+    @Test
+    void given_completionPersistenceFails_when_jobRuns_then_failureIsHandledOnceAndReaderIsClosed()
+            throws Exception {
+        var jobId = JobIdRequest.builder().id(UUID.randomUUID()).userName("userId").build();
+        when(persistence.startJob(Mockito.notNull())).thenReturn(jobId);
+        Mockito.doThrow(new IllegalStateException("Completion update failed"))
+                .when(persistence)
+                .setCompleted(jobId);
+        var lifecycle = mockLifecycle();
+        @SuppressWarnings("unchecked")
+        DataReader<PersonCsvPojo> reader = mock(DataReader.class);
+        var request =
+                JobTypeRequest.builder()
+                        .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                        .userName("userId")
+                        .build();
+
+        var response = asyncJobServiceImpl.startJob(request, reader, lifecycle);
+
+        var exception =
+                Assertions.assertThrows(ExecutionException.class, () -> response.getFuture().get());
+        Assertions.assertEquals(
+                "Completion update failed", exception.getCause().getCause().getMessage());
+        verify(persistence).setFailure(Mockito.eq(jobId), Mockito.anyString());
+        verify(persistence).setJobStatus(jobId, JobStatus.FAILED);
+        verify(persistence, never()).setJobStatus(jobId, JobStatus.COMPLETED);
+        verify(reader).close();
+        var events = lifecycleEventCaptor();
+        verify(lifecycle, times(3)).lifeCycleEventPerformed(events.capture());
+        Assertions.assertEquals(
+                List.of(JobStatus.RECEIVED, JobStatus.COMPLETED, JobStatus.FAILED),
+                events.getAllValues().stream().map(AsyncJobLifecycleEvent::getJobStatus).toList());
     }
 
     @Test
@@ -322,7 +355,7 @@ class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         verify(dataReader).close();
         verify(persistence).setJobStatus(jobIdRequest, JobStatus.RECEIVED);
-        verify(persistence).setJobStatus(jobIdRequest, JobStatus.COMPLETED);
+        verify(persistence).setCompleted(jobIdRequest);
         verify(persistence, never()).setJobStatus(jobIdRequest, JobStatus.FAILED);
     }
 
