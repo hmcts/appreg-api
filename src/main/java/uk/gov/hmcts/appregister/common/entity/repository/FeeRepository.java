@@ -12,6 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
  * Explicit ID lookups retain historical references.
  */
 public interface FeeRepository extends JpaRepository<Fee, Long> {
+    boolean existsByReferenceIgnoreCaseAndIsOffsiteFalse(String reference);
 
     /**
      * Finds a list of Fee entities by their reference.

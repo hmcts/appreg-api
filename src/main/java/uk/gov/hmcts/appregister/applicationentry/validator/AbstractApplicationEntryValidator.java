@@ -475,6 +475,27 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             ApplicationCode applicationCode,
             T validatable,
             BiFunction<ApplicationCode, T, FeePair> feeResolver) {
+        FeePair feeToReturn = null;
+        if (applicationCode.getFeeDue() == YesOrNo.YES) {
+            if (StringUtils.isBlank(applicationCode.getFeeReference())) {
+                throw new AppRegistryException(
+                        AppListEntryError.FEE_DETAILS_INCOMPLETE,
+                        "Application code has no fee reference");
+            }
+            feeToReturn = feeResolver.apply(applicationCode, validatable);
+            if (feeToReturn == null || feeToReturn.mainFee() == null) {
+                var error =
+                        feeService.feeReferenceExists(applicationCode.getFeeReference())
+                                ? AppListEntryError.FEE_DATE_INVALID
+                                : AppListEntryError.FEE_DETAILS_INCOMPLETE;
+                throw new AppRegistryException(
+                        error, "No applicable main fee for application code");
+            }
+            if (feeToReturn.mainFee().getAmount() == null) {
+                throw new AppRegistryException(
+                        AppListEntryError.FEE_DETAILS_INCOMPLETE, "Applicable fee has no amount");
+            }
+        }
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
@@ -496,10 +517,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                     "Fee not required for code %s".formatted(getApplicationCode(validatable)));
         }
 
-        // if the fee is required but it cant be found then error
-        FeePair feeToReturn = null;
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            feeToReturn = feeResolver.apply(applicationCode, validatable);
             // this is to hide the offsite fee if the flag is not set, as we only want to return the
             // main fee to the frontend if the offsite fee is not required.
             if (getHasOffsiteFee(validatable) == Boolean.FALSE && feeToReturn != null) {

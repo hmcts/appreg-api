@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.jdbc.Sql;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
@@ -48,6 +50,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
@@ -68,6 +71,16 @@ import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryWrapperDto;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @Slf4j
+// Use an existing main fee for the happy path and restore the baseline after each test.
+@Sql(
+        statements =
+                "UPDATE testschema.application_codes SET ac_fee_reference = 'CO2.1'"
+                        + " WHERE application_code = 'MS99007'")
+@Sql(
+        statements =
+                "UPDATE testschema.application_codes SET ac_fee_reference = 'CO1.1'"
+                        + " WHERE application_code = 'MS99007'",
+        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationEntryService applicationEntryService;
@@ -109,7 +122,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.parse("2016-01-01"));
+        entryCreateDto.setLodgementDate(LocalDate.parse("2022-01-01"));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setMiddleName(JsonNullable.of(null));
@@ -173,7 +186,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             "Request to copy documents",
                             List.of(),
-                            1);
+                            2);
 
                     Fee offsiteFee = null;
                     for (AppListEntryFeeId entryFeeId : applicationListEntry.getEntryFeeIds()) {
@@ -193,7 +206,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         assertThat(offsiteFee.getEndDate())
                                 .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
                     }
-                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("70.00"));
+                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("40.00"));
                 });
     }
 
@@ -292,7 +305,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    void createEntryNoRespondentWithFeeLodgementDateInThePast() {
+    void createEntryNoRespondentWithFeeLodgementDateBeforeFirstFeeIsRejected() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -314,52 +327,42 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
-        MatchResponse<EntryGetDetailDto> response;
+        var error =
+                Assertions.assertThrows(
+                        RuntimeException.class,
+                        () ->
+                                unitOfWork.inTransaction(
+                                        () -> {
+                                            ApplicationList applicationList =
+                                                    applicationListRepository
+                                                            .findAll(
+                                                                    Sort.by(
+                                                                            Sort.Direction.ASC,
+                                                                            "id"))
+                                                            .getFirst();
 
-        // run the test
-        response =
-                unitOfWork.inTransaction(
-                        () -> {
-                            ApplicationList applicationList =
-                                    applicationListRepository
-                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                                            .getFirst();
+                                            // because of the random order of tests, this can fail
+                                            // so need to
+                                            // make sure the application list is in a valid state
+                                            applicationList.setStatus(Status.OPEN);
+                                            applicationList.setDeleted(false);
+                                            applicationListRepository.save(applicationList);
+                                            applicationListRepository.flush();
 
-                            // because of the random order of tests, this can fail so need to
-                            // make sure the application list is in a valid state
-                            applicationList.setStatus(Status.OPEN);
-                            applicationList.setDeleted(false);
-                            applicationListRepository.save(applicationList);
-                            applicationListRepository.flush();
-
-                            PayloadForCreate<EntryCreateDto> payloadForCreate =
-                                    PayloadForCreate.<EntryCreateDto>builder()
-                                            .id(applicationList.getUuid())
-                                            .data(entryCreateDto)
-                                            .build();
-                            return applicationEntryService.createEntry(payloadForCreate);
-                        });
-
-        // make the assertions
-        unitOfWork.inTransaction(
-                () -> {
-                    ApplicationList applicationList =
-                            applicationListRepository
-                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                                    .getFirst();
-                    ApplicationListEntry applicationListEntry =
-                            applicationListEntryRepository
-                                    .findByUuid(response.getPayload().getId())
-                                    .orElseThrow();
-
-                    // validate the database based on the request data and the response
-                    // based on the database contents
-                    Assertions.assertEquals("AD99001", response.getPayload().getApplicationCode());
-                    Assertions.assertEquals(
-                            "Request to copy documents",
-                            applicationListEntry.getApplicationListEntryWording());
-                    Assertions.assertTrue(applicationListEntry.getEntryFeeIds().isEmpty());
-                });
+                                            PayloadForCreate<EntryCreateDto> payloadForCreate =
+                                                    PayloadForCreate.<EntryCreateDto>builder()
+                                                            .id(applicationList.getUuid())
+                                                            .data(entryCreateDto)
+                                                            .build();
+                                            return applicationEntryService.createEntry(
+                                                    payloadForCreate);
+                                        }));
+        assertThat(error.getCause())
+                .isInstanceOfSatisfying(
+                        AppRegistryException.class,
+                        cause ->
+                                assertThat(cause.getCode())
+                                        .isEqualTo(AppListEntryError.FEE_DATE_INVALID));
     }
 
     @Test
@@ -914,7 +917,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         UUID uuid =
                 createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
-                        LocalDate.parse("2016-01-01"));
+                        LocalDate.parse("2022-01-01"));
 
         Optional<ApplicationListEntry> applicationListEntry =
                 applicationListEntryRepository.findByUuid(uuid);
@@ -987,14 +990,14 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
-                new ApplicationListEntryWrapperDto(entryUpdateDto, LocalDate.parse("2016-01-01")),
+                new ApplicationListEntryWrapperDto(entryUpdateDto, LocalDate.parse("2022-01-01")),
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
                 List.of(),
-                1);
+                2);
 
         // validate that the fee records have not changed except for the offsite fee being added
         for (AppListEntryFeeId entryFeeID : applicationListEntry.get().getEntryFeeIds()) {
@@ -1002,13 +1005,15 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
             Assertions.assertTrue(fee.isPresent());
             assertThat(applicationListEntry.get().getLodgementDate())
                     .isAfterOrEqualTo(fee.get().getStartDate());
-            assertThat(applicationListEntry.get().getLodgementDate())
-                    .isBeforeOrEqualTo(fee.get().getEndDate());
+            if (fee.get().getEndDate() != null) {
+                assertThat(applicationListEntry.get().getLodgementDate())
+                        .isBeforeOrEqualTo(fee.get().getEndDate());
+            }
 
             if (fee.get().isOffsite()) {
-                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("70.00"));
+                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("40.00"));
             } else {
-                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("50.00"));
+                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("11.00"));
             }
         }
     }
@@ -1317,7 +1322,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + "{{Premises Address}} for date {{Premises Date}}",
                 List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
                 List.of(),
-                1);
+                2);
     }
 
     @Test
@@ -1853,7 +1858,7 @@ class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
                             entryCreateDto.getWordingFields(),
-                            1);
+                            2);
                 });
 
         return response.getPayload().getId();

@@ -114,6 +114,7 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
     protected EntryGetDetailDto createEntry(UUID listId, Consumer<EntryCreateDto> modifyCallback)
             throws Exception {
         var entryDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryDto.setApplicationCode("ZS99007");
 
         if (modifyCallback != null) {
             modifyCallback.accept(entryDto);
@@ -129,6 +130,7 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
 
     protected EntryGetDetailDto createEntryForClose(UUID listId) throws Exception {
         var entryDto = CreateEntryDtoUtil.getCorrectCreateEntryDto(true);
+        entryDto.setApplicationCode("ZS99007");
 
         Response createEntryResp =
                 restAssuredClient.executePostRequest(

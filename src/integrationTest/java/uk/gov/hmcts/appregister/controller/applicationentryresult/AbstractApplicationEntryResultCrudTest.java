@@ -147,6 +147,7 @@ abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegration {
         substitution1.setValue(LocalDate.now(java.time.ZoneOffset.UTC).toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setApplicationCode("ZS99007");
 
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.is;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,6 +25,8 @@ import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -41,6 +44,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -53,6 +57,7 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.testutils.DatabaseReset;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -63,6 +68,61 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {" ", "UNKNOWN1906", "EXPIRED1907"})
+    void invalidFeeConfigurationCannotBeBypassedThroughApi(String reference) throws Exception {
+        var lodgementDate = LocalDate.now().minusMonths(1);
+        unitOfWork.inTransaction(
+                () -> {
+                    var code =
+                            applicationCodeRepository.findAll().stream()
+                                    .filter(candidate -> "MS99002".equals(candidate.getCode()))
+                                    .findFirst()
+                                    .orElseThrow();
+                    code.setFeeDue(YesOrNo.YES);
+                    code.setFeeReference(reference);
+                    applicationCodeRepository.saveAndFlush(code);
+                    if ("EXPIRED1907".equals(reference)) {
+                        var expired = new FeeTestData().someComplete();
+                        expired.setId(DatabaseReset.SEQUENCE_START_VALUE + 190700L);
+                        expired.setReference(reference);
+                        expired.setOffsite(false);
+                        expired.setStartDate(lodgementDate.minusYears(2));
+                        expired.setEndDate(lodgementDate.minusDays(1));
+                        persistance.save(expired);
+                    }
+                    return null;
+                });
+        var payload = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        payload.setApplicationCode("MS99002");
+        payload.setStandardApplicantCode(null);
+        payload.setNumberOfRespondents(null);
+        payload.setLodgementDate(lodgementDate);
+        payload.setWordingFields(List.of(new TemplateSubstitution("Text", "free text")));
+        var countBefore = applicationListEntryRepository.count();
+        restAssuredClient
+                .executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        createAdminToken().fetchTokenForRole(),
+                        payload)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("type", is("EXPIRED1907".equals(reference) ? "ALE-56" : "ALE-55"))
+                .body(
+                        "detail",
+                        is(
+                                "EXPIRED1907".equals(reference)
+                                        ? "Fee Reference is not valid on the lodgement date, "
+                                                + "please contact Crime IT Support."
+                                        : "Fee details are missing or incomplete, please contact Crime IT Support."));
+        Assertions.assertEquals(countBefore, applicationListEntryRepository.count());
+    }
+
     @Autowired private DataAuditRepository dataAuditRepository;
 
     @Test
